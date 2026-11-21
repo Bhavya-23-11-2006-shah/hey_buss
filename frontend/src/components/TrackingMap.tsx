@@ -30,16 +30,17 @@ export const TrackingMap: React.FC<TrackingMapProps> = ({
         attributionControl: false,
       });
 
-      // Accessible high-contrast tile layer (CartoDB Positron / OSM)
+      // Accessible light tile layer (CartoDB Positron)
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         maxZoom: 19,
       }).addTo(map);
 
-      // Add Stop Markers
+      // Add Stop Markers with custom clean badges
       stops.forEach((stop, index) => {
+        const isFirst = index === 0;
         const stopIcon = L.divIcon({
           className: 'custom-stop-marker',
-          html: `<div style="background-color: #121212; color: #FFFFFF; border: 2px solid #FFDE00; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; font-family: monospace; box-shadow: 2px 2px 0px rgba(0,0,0,0.4);">${index + 1}</div>`,
+          html: `<div style="background-color: ${isFirst ? '#1238C9' : '#0B1330'}; color: #FFFFFF; border: 2px solid #FFFFFF; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; font-family: 'Atkinson Hyperlegible', sans-serif; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">${index + 1}</div>`,
           iconSize: [26, 26],
           iconAnchor: [13, 13],
         });
@@ -49,30 +50,28 @@ export const TrackingMap: React.FC<TrackingMapProps> = ({
           .bindPopup(`<b>${stop.name}</b><br/><small>${stop.note}</small>`);
       });
 
-      // Add Route Line
+      // Route Line
       const routeCoords = stops.map((s) => [s.lat, s.lng] as [number, number]);
       L.polyline(routeCoords, {
-        color: '#121212',
-        weight: 5,
-        opacity: 0.85,
-        dashArray: '8, 8',
+        color: '#1238C9',
+        weight: 4,
+        opacity: 0.8,
+        dashArray: '6, 6',
       }).addTo(map);
 
-      // Bus marker icon
+      // Moving Bus marker icon (marigold background with bus glyph)
       const busIcon = L.divIcon({
         className: 'custom-bus-marker',
-        html: `<div style="background-color: #FFDE00; color: #121212; border: 3px solid #121212; border-radius: 8px; padding: 4px; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; box-shadow: 3px 3px 0px #121212; font-weight: bold;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22">
-            <rect x="3" y="3" width="18" height="15" rx="2"></rect>
-            <path d="M3 9h18"></path>
-            <path d="M7 14h.01"></path>
-            <path d="M17 14h.01"></path>
-            <path d="M5 18v3"></path>
-            <path d="M19 18v3"></path>
+        html: `<div style="background-color: #FFB800; color: #0B1330; border: 2px solid #0B1330; border-radius: 8px; padding: 3px; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; box-shadow: 0 4px 8px rgba(0,0,0,0.25);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+            <rect x="2" y="6" width="20" height="13" rx="2"></rect>
+            <path d="M2 12h20"></path>
+            <circle cx="6.5" cy="21" r="1.5"></circle>
+            <circle cx="17.5" cy="21" r="1.5"></circle>
           </svg>
         </div>`,
-        iconSize: [36, 36],
-        iconAnchor: [18, 18],
+        iconSize: [34, 34],
+        iconAnchor: [17, 17],
       });
 
       const marker = L.marker([initialLat, initialLng], { icon: busIcon }).addTo(map);
@@ -98,29 +97,11 @@ export const TrackingMap: React.FC<TrackingMapProps> = ({
   }, [busPosition]);
 
   return (
-    <div className="space-y-3">
-      {/* Map view container */}
-      <div
-        ref={mapContainerRef}
-        className="w-full h-56 sm:h-64 border-3 border-ink rounded shadow-hard overflow-hidden bg-neutral-100"
-        aria-label="Live interactive bus tracking map"
-      />
-
-      {/* Accessible Text list of stops */}
-      <div className="bg-white border-2 border-ink p-3 rounded text-sm space-y-1">
-        <div className="font-mono font-bold text-xs uppercase tracking-wider text-neutral-600 mb-1">
-          Route Stops:
-        </div>
-        <ol className="list-decimal list-inside space-y-1 font-medium">
-          {stops.map((stop) => (
-            <li key={stop.id} className="text-ink">
-              <span className="font-bold">{stop.name}</span>
-              <span className="text-neutral-500 text-xs ml-1">({stop.note})</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </div>
+    <div
+      ref={mapContainerRef}
+      className="w-full h-64 sm:h-80 rounded-card overflow-hidden bg-neutral-100"
+      aria-label="Live interactive bus tracking map"
+    />
   );
 };
 

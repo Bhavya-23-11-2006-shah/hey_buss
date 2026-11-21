@@ -1,6 +1,8 @@
 import React from 'react';
 import type { Trip } from '../types';
-import { ClockIcon, RampIcon, WheelchairIcon, AlertIcon } from './Icons';
+import { RouteBadge } from './ui/RouteBadge';
+import { StatusPill } from './ui/StatusPill';
+import { ClockIcon, RampIcon, WheelchairIcon, CheckIcon } from './Icons';
 
 interface TripCardProps {
   trip: Trip;
@@ -26,20 +28,17 @@ export const TripCard: React.FC<TripCardProps> = ({
   const isCancelled = trip.status === 'CANCELLED';
 
   return (
-    <div
-      className={`border-3 border-ink rounded p-4 shadow-hard transition-all ${
-        isExact ? 'bg-white ring-2 ring-signal-yellow' : 'bg-paper'
+    <article
+      className={`card p-5 transition-all ${
+        isExact ? 'border-cobalt ring-2 ring-cobalt/20 shadow-md' : 'hover:border-neutral-400'
       }`}
     >
       {/* Header bar: Badge, Label & Time */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
-          {/* Route Badge */}
-          <div className="bg-signal-yellow border-2 border-ink px-2.5 py-1 rounded font-black text-xl tracking-wider text-ink shadow-hard-sm">
-            Route {trip.route}
-          </div>
+          <RouteBadge route={trip.route} className="text-sm px-3 py-1 font-black" />
           {label && (
-            <span className="text-xs font-mono font-extrabold uppercase px-2 py-0.5 bg-ink text-white rounded">
+            <span className="text-xs font-mono font-bold uppercase px-2 py-0.5 bg-neutral-100 text-ink rounded border border-neutral-300">
               {label}
             </span>
           )}
@@ -47,12 +46,12 @@ export const TripCard: React.FC<TripCardProps> = ({
 
         {/* Departure Time */}
         <div className="text-right">
-          <div className="flex items-center gap-1 font-mono font-black text-2xl text-ink">
-            <ClockIcon size={20} />
-            <span>{trip.departs}</span>
+          <div className="flex items-center justify-end gap-1.5 font-mono font-bold text-2xl text-ink tabular">
+            <ClockIcon size={18} className="text-muted" />
+            <time dateTime={trip.departs}>{trip.departs}</time>
           </div>
           {diffMinutes !== undefined && diffMinutes !== 0 && (
-            <span className="text-xs font-mono font-bold text-neutral-600 block">
+            <span className="text-xs font-mono font-medium text-muted block tabular">
               {diffMinutes > 0 ? `+${diffMinutes} min later` : `${diffMinutes} min earlier`}
             </span>
           )}
@@ -60,77 +59,65 @@ export const TripCard: React.FC<TripCardProps> = ({
       </div>
 
       {/* From -> To */}
-      <div className="text-base font-bold text-neutral-800 mb-2">
-        <span>{trip.from}</span> <span className="text-neutral-500">→</span> <span>{trip.to}</span>
+      <div className="text-base font-bold text-ink mb-3">
+        <span>{trip.from}</span>
+        <span className="text-muted mx-2" aria-hidden="true">→</span>
+        <span>{trip.to}</span>
       </div>
 
       {/* Status Badges */}
-      <div className="flex flex-wrap items-center gap-2 mb-3">
-        {trip.status === 'ON_TIME' && (
-          <span className="px-2 py-0.5 text-xs font-black uppercase bg-green-100 text-transit-green border border-transit-green rounded">
-            On Time
-          </span>
-        )}
-        {isDelayed && (
-          <span className="px-2 py-0.5 text-xs font-black uppercase bg-yellow-100 text-yellow-900 border border-yellow-900 rounded flex items-center gap-1">
-            <AlertIcon size={14} /> Delayed (+{trip.delayMin}m)
-          </span>
-        )}
-        {isFull && (
-          <span className="px-2 py-0.5 text-xs font-black uppercase bg-red-100 text-sos-red border border-sos-red rounded">
-            Bus Full
-          </span>
-        )}
-        {isCancelled && (
-          <span className="px-2 py-0.5 text-xs font-black uppercase bg-red-200 text-sos-red border border-sos-red rounded">
-            Cancelled
-          </span>
-        )}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {trip.status === 'ON_TIME' && <StatusPill status="ON_TIME" />}
+        {isDelayed && <StatusPill status="DELAYED" delayMin={trip.delayMin} />}
+        {isFull && <StatusPill status="FULL" />}
+        {isCancelled && <StatusPill status="CANCELLED" />}
 
         {/* Accessibility Features */}
         {trip.ramp && (
-          <span className="px-2 py-0.5 text-xs font-bold bg-white border border-ink rounded flex items-center gap-1 text-ink">
-            <RampIcon size={14} /> Hydraulic Ramp
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full bg-blue-50 text-cobalt border border-blue-200">
+            <RampIcon size={13} />
+            <span>Ramp Fitted</span>
           </span>
         )}
 
-        {/* Prominent Bays Free for Wheelchair Mode */}
+        {/* Bays free for wheelchair mode */}
         {showWheelchairProminent && (
           <span
-            className={`px-2.5 py-0.5 text-xs font-extrabold border-2 border-ink rounded flex items-center gap-1 ${
-              trip.baysFree > 0 ? 'bg-signal-yellow text-ink' : 'bg-red-100 text-sos-red'
+            className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full border ${
+              trip.baysFree > 0
+                ? 'bg-green-50 text-success border-green-200'
+                : 'bg-red-50 text-danger border-red-200'
             }`}
           >
-            <WheelchairIcon size={14} />
-            {trip.baysFree > 0
-              ? `${trip.baysFree} Bay${trip.baysFree > 1 ? 's' : ''} Free`
-              : 'No Bays Available'}
+            <WheelchairIcon size={13} />
+            <span>{trip.baysFree > 0 ? `${trip.baysFree} bay${trip.baysFree > 1 ? 's' : ''} free` : 'No bays free'}</span>
           </span>
         )}
       </div>
 
       {/* Reason text if provided */}
       {reason && (
-        <p className="text-xs font-mono text-neutral-700 bg-neutral-100 p-2 border border-neutral-300 rounded mb-3">
+        <p className="text-xs text-muted bg-surface p-3 rounded-btn border border-neutral-200 mb-4">
           {reason}
         </p>
       )}
 
-      {/* Select / Book this trip button */}
+      {/* Select button */}
       <button
         type="button"
         disabled={isCancelled || isFull}
         onClick={() => onSelect(trip)}
-        className={`w-full min-h-[50px] font-black text-lg border-2 border-ink rounded shadow-hard-sm transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ink ${
+        className={`w-full min-h-[48px] py-2.5 px-4 rounded-btn font-bold text-base transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cobalt ${
           isCancelled || isFull
-            ? 'opacity-50 cursor-not-allowed bg-neutral-200'
+            ? 'opacity-40 cursor-not-allowed bg-neutral-200 text-neutral-600'
             : isExact
-            ? 'bg-signal-yellow text-ink hover:bg-yellow-300 active:translate-x-0.5 active:translate-y-0.5'
-            : 'bg-white text-ink hover:bg-neutral-100'
+            ? 'btn-primary'
+            : 'btn-secondary'
         }`}
       >
-        {isExact ? 'Select This Trip (Recommended)' : `Choose ${trip.departs} Bus`}
+        {isExact && <CheckIcon size={18} />}
+        <span>{isExact ? 'Select This Bus (Best Match)' : `Choose ${trip.departs} Bus`}</span>
       </button>
-    </div>
+    </article>
   );
 };

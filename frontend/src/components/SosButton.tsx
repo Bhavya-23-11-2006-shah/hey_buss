@@ -3,14 +3,19 @@ import { apiClient } from '../api/client';
 import { useStore } from '../store/useStore';
 import { vibrateDevice, speakText } from '../utils/speech';
 
-export const SosButton: React.FC = () => {
+
+interface SosButtonProps {
+  floating?: boolean;
+}
+
+export const SosButton: React.FC<SosButtonProps> = ({ floating = true }) => {
   const activeBooking = useStore((state) => state.activeBooking);
   const profile = useStore((state) => state.profile);
   const triggerScreenFlash = useStore((state) => state.triggerScreenFlash);
   const setDestinationBoardText = useStore((state) => state.setDestinationBoardText);
 
   const [isPressing, setIsPressing] = useState(false);
-  const [progress, setProgress] = useState(0); // 0 to 100%
+  const [remainingSec, setRemainingSec] = useState(2.0);
   const [sosSent, setSosSent] = useState(false);
   const [sosError, setSosError] = useState<string | null>(null);
 
@@ -24,15 +29,15 @@ export const SosButton: React.FC = () => {
     if (sosSent) return;
 
     setIsPressing(true);
-    setProgress(0);
+    setRemainingSec(2.0);
     pressStartRef.current = Date.now();
     vibrateDevice(80);
 
     timerRef.current = window.setInterval(() => {
       if (!pressStartRef.current) return;
       const elapsed = Date.now() - pressStartRef.current;
-      const pct = Math.min(100, Math.round((elapsed / HOLD_DURATION_MS) * 100));
-      setProgress(pct);
+      const rem = Math.max(0, (HOLD_DURATION_MS - elapsed) / 1000);
+      setRemainingSec(Number(rem.toFixed(1)));
 
       if (elapsed >= HOLD_DURATION_MS) {
         cancelHold();
@@ -43,7 +48,7 @@ export const SosButton: React.FC = () => {
 
   const cancelHold = () => {
     setIsPressing(false);
-    setProgress(0);
+    setRemainingSec(2.0);
     pressStartRef.current = null;
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -55,8 +60,8 @@ export const SosButton: React.FC = () => {
     vibrateDevice([300, 150, 300, 150, 400]);
     triggerScreenFlash();
 
-    let lat = 28.6139;
-    let lng = 77.209;
+    let lat = 22.5657; // Default Kolkata coordinates
+    let lng = 88.3433;
 
     if ('geolocation' in navigator) {
       try {
@@ -69,7 +74,7 @@ export const SosButton: React.FC = () => {
         lat = position.coords.latitude;
         lng = position.coords.longitude;
       } catch (err) {
-        console.warn('Geolocation failed or denied, using stop fallback:', err);
+        console.warn('Geolocation failed or denied, using fallback:', err);
       }
     }
 
@@ -80,8 +85,8 @@ export const SosButton: React.FC = () => {
 
       const msg =
         profile.language === 'hi'
-          ? 'एसओएस चेतावनी भेजी गई! बस कंट्रोल और कंडक्टर को सूचित किया गया है।'
-          : 'EMERGENCY SOS RAISED! Control room and conductor alerted with your location.';
+          ? 'एसओएस चेतावनी सक्रिय! कंट्रोल रूम और कंडक्टर को आपकी स्थिति भेजी गई।'
+          : 'EMERGENCY SOS ACTIVE! Control room and conductor alerted with your location.';
 
       setDestinationBoardText(msg);
       speakText(msg, profile.language);
@@ -94,68 +99,86 @@ export const SosButton: React.FC = () => {
     return () => cancelHold();
   }, []);
 
-  return (
-    <>
-      <div className="relative inline-block">
+  const buttonElement = (
+    <div className="relative inline-block select-none">
+      <button
+        type="button"
+        onMouseDown={startHold}
+        onMouseUp={cancelHold}
+        onMouseLeave={cancelHold}
+        onTouchStart={startHold}
+        onTouchEnd={cancelHold}
+        onKeyDown={(e) => {
+          if (e.key === ' ' || e.key === 'Enter') {
+            if (!isPressing) startHold(e);
+          }
+        }}
+        onKeyUp={cancelHold}
+        className={`relative min-h-[48px] px-4 py-2 rounded-full font-black text-white shadow-lg active:scale-95 transition-all flex items-center gap-2 border-2 border-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-danger ${
+          isPressing ? 'bg-red-700 ring-4 ring-red-300' : 'bg-danger hover:bg-red-700'
+        }`}
+        style={{ backgroundColor: '#E5213B' }}
+        aria-label="Emergency SOS - Press and hold for 2 seconds to alert transit control"
+        aria-pressed={isPressing}
+      >
+        <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
+        <span className="tracking-wider text-base font-black uppercase">SOS</span>
+        {isPressing && (
+          <span className="text-xs bg-black/40 text-white px-2 py-0.5 rounded-full font-mono tabular">
+            {remainingSec.toFixed(1)}s
+          </span>
+        )}
+      </button>
+
+      {/* Cancel button appears while pressing */}
+      {isPressing && (
         <button
           type="button"
-          onMouseDown={startHold}
-          onMouseUp={cancelHold}
-          onMouseLeave={cancelHold}
-          onTouchStart={startHold}
-          onTouchEnd={cancelHold}
-          onKeyDown={(e) => {
-            if (e.key === ' ' || e.key === 'Enter') {
-              if (!isPressing) startHold(e);
-            }
-          }}
-          onKeyUp={cancelHold}
-          className={`relative min-h-[50px] px-4 py-2 border-3 border-ink rounded font-black text-white bg-sos-red shadow-hard active:translate-x-0.5 active:translate-y-0.5 active:shadow-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ink transition-all select-none flex items-center gap-2`}
-          aria-label="Emergency SOS - Press and hold for 2 seconds to alert transit control"
-          aria-pressed={isPressing}
+          onClick={cancelHold}
+          className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-ink text-xs font-bold px-2 py-0.5 rounded shadow border border-neutral-300 whitespace-nowrap"
+          aria-label="Cancel SOS trigger"
         >
-          <span className="w-3 h-3 rounded-full bg-white animate-ping" />
-          <span className="tracking-wider text-base font-extrabold uppercase">SOS</span>
-          {isPressing && (
-            <span className="text-xs bg-ink text-white px-1.5 py-0.5 rounded font-mono">
-              {Math.max(0, 2 - (progress / 100) * 2).toFixed(1)}s
-            </span>
-          )}
+          Cancel
         </button>
+      )}
+    </div>
+  );
 
-        {/* Progress Bar under button while holding */}
-        {isPressing && (
-          <div className="absolute -bottom-2 left-0 right-0 h-2 bg-ink rounded-full overflow-hidden border border-white">
-            <div
-              className="h-full bg-signal-yellow transition-all duration-75"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        )}
-      </div>
+  return (
+    <>
+      {floating ? (
+        <aside
+          aria-label="Emergency SOS trigger"
+          className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 pointer-events-auto"
+        >
+          {buttonElement}
+        </aside>
+      ) : (
+        buttonElement
+      )}
 
       {/* SOS Alert Modal/Banner */}
       {sosSent && (
         <div
           role="alert"
           aria-live="assertive"
-          className="fixed inset-0 z-50 bg-ink/80 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4"
         >
-          <div className="bg-paper border-4 border-sos-red p-6 max-w-md w-full shadow-hard-lg rounded">
-            <div className="flex items-center gap-3 text-sos-red mb-3">
-              <span className="w-4 h-4 rounded-full bg-sos-red animate-ping" />
-              <h2 className="text-2xl font-serif font-black text-sos-red">
+          <div className="bg-white border-2 border-danger p-6 max-w-md w-full rounded-card shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-danger">
+              <span className="w-4 h-4 rounded-full bg-danger animate-ping" />
+              <h2 className="text-2xl font-black text-danger">
                 EMERGENCY SOS ACTIVE
               </h2>
             </div>
-            <p className="text-lg font-bold text-ink mb-4">
-              Your GPS coordinates and accessibility assistance profile have been transmitted to
-              the central transit control room and your nearest bus conductor.
+            <p className="text-base font-bold text-ink">
+              Your GPS coordinates and assistance instructions have been transmitted to the
+              central transit control room and your bus crew.
             </p>
-            <div className="bg-white border-2 border-ink p-3 rounded mb-5 text-sm font-mono space-y-1">
-              <div>STATUS: DISPATCH ALERTED</div>
+            <div className="bg-surface border border-neutral-300 p-3 rounded text-xs font-mono space-y-1">
+              <div>STATUS: CENTRAL DISPATCH NOTIFIED</div>
               <div>PASSENGER: {profile.name}</div>
-              <div>ASSISTANCE: {profile.howToHelp.join(', ') || 'General Transit Assistance'}</div>
+              <div>ASSISTANCE: {profile.howToHelp.join(', ') || 'General Assistance'}</div>
             </div>
             <button
               type="button"
@@ -163,7 +186,7 @@ export const SosButton: React.FC = () => {
                 setSosSent(false);
                 setDestinationBoardText('HEY BUSS - A BUS THAT IS READY FOR YOU');
               }}
-              className="w-full min-h-[56px] bg-ink text-white font-bold text-lg border-2 border-ink shadow-hard rounded hover:bg-neutral-800 focus-visible:ring-4 focus-visible:ring-ink"
+              className="btn btn-primary w-full text-base font-black"
             >
               Dismiss Alarm
             </button>
@@ -172,7 +195,7 @@ export const SosButton: React.FC = () => {
       )}
 
       {sosError && (
-        <div role="alert" className="fixed bottom-4 right-4 bg-sos-red text-white p-3 border-2 border-ink rounded font-bold shadow-hard">
+        <div role="alert" className="fixed bottom-4 right-4 bg-danger text-white p-3 rounded font-bold shadow-lg z-50">
           {sosError}
         </div>
       )}

@@ -1,14 +1,18 @@
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { Logo } from './Logo';
-import { SosButton } from './SosButton';
-import { BlindIcon, DeafIcon, WheelchairIcon } from './Icons';
+import { SettingsIcon, MicIcon, BlindIcon, DeafIcon, WheelchairIcon } from './Icons';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onTalkClick?: () => void;
+  isListening?: boolean;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onTalkClick, isListening = false }) => {
   const profile = useStore((state) => state.profile);
   const setProfile = useStore((state) => state.setProfile);
-  const currentScreen = useStore((state) => state.currentScreen);
-  const setScreen = useStore((state) => state.setScreen);
+  const navigate = useNavigate();
 
   const toggleLanguage = () => {
     const nextLang = profile.language === 'en' ? 'hi' : 'en';
@@ -16,34 +20,25 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-paper border-b-2 border-ink">
-      {/* Accessible skip link */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-signal-yellow focus:text-ink focus:px-4 focus:py-2 focus:border-3 focus:border-ink focus:font-black focus:shadow-hard"
-      >
-        Skip to main content
-      </a>
-
-      <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+    <header className="sticky top-0 z-30 bg-white border-b border-neutral-300">
+      <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
         {/* Brand / Logo */}
-        <button
-          type="button"
-          onClick={() => setScreen(currentScreen === 'landing' ? 'landing' : 'home')}
-          className="p-1 rounded focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ink"
-          aria-label="Hey Buss - Go to Home"
+        <Link
+          to="/"
+          className="p-1 rounded-btn focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cobalt"
+          aria-label="Hey Buss - Go to Homepage"
         >
           <Logo size="md" />
-        </button>
+        </Link>
 
-        {/* Right side controls: Mode indicators, Language, Settings, SOS */}
-        <div className="flex items-center gap-2">
+        {/* Center / Right controls */}
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Active Needs Badges */}
-          <div className="hidden sm:flex items-center gap-1">
+          <div className="hidden lg:flex items-center gap-1.5" aria-label="Active accessibility profile">
             {profile.needs.includes('blind') && (
               <span
-                title="Blind Mode Active (Speech Enabled)"
-                className="p-1.5 bg-signal-yellow border border-ink rounded text-ink"
+                title="Blind Mode Active (Voice assistance & double-tap)"
+                className="p-1.5 bg-blue-50 text-cobalt border border-blue-200 rounded-btn"
                 aria-label="Blind Mode Active"
               >
                 <BlindIcon size={18} />
@@ -52,7 +47,7 @@ export const Header: React.FC = () => {
             {profile.needs.includes('deaf') && (
               <span
                 title="Deaf Mode Active (Captions & Vibration)"
-                className="p-1.5 bg-signal-yellow border border-ink rounded text-ink"
+                className="p-1.5 bg-yellow-50 text-amber-800 border border-yellow-200 rounded-btn"
                 aria-label="Deaf Mode Active"
               >
                 <DeafIcon size={18} />
@@ -60,8 +55,8 @@ export const Header: React.FC = () => {
             )}
             {profile.needs.includes('wheelchair') && (
               <span
-                title="Wheelchair Mode Active (Ramp Buses Only)"
-                className="p-1.5 bg-signal-yellow border border-ink rounded text-ink"
+                title="Wheelchair Mode Active (Ramp buses & bay tracking)"
+                className="p-1.5 bg-green-50 text-success border border-green-200 rounded-btn"
                 aria-label="Wheelchair Mode Active"
               >
                 <WheelchairIcon size={18} />
@@ -69,30 +64,43 @@ export const Header: React.FC = () => {
             )}
           </div>
 
+          {/* Desktop Raised Talk Button in Header */}
+          {onTalkClick && (
+            <button
+              type="button"
+              onClick={onTalkClick}
+              className={`hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-btn font-black text-sm uppercase tracking-wide border-2 border-black/10 transition-all shadow-sm ${
+                isListening
+                  ? 'bg-danger text-white animate-pulse'
+                  : 'bg-marigold text-ink hover:brightness-105 active:scale-95'
+              }`}
+              style={{ backgroundColor: isListening ? '#E5213B' : '#FFB800' }}
+              aria-label={isListening ? 'Stop listening' : 'Start voice booking'}
+            >
+              <MicIcon size={18} />
+              <span>{isListening ? 'Listening...' : 'Talk'}</span>
+            </button>
+          )}
+
           {/* Language Switcher */}
           <button
             type="button"
             onClick={toggleLanguage}
-            className="min-h-[44px] px-2.5 py-1.5 border-2 border-ink bg-white font-extrabold text-sm uppercase rounded shadow-hard-sm hover:bg-signal-yellow transition-colors focus-visible:ring-4 focus-visible:ring-ink"
-            aria-label={`Switch language. Current: ${profile.language === 'en' ? 'English' : 'Hindi'}`}
+            className="min-h-[40px] px-3 py-1.5 border border-neutral-300 bg-surface font-extrabold text-xs uppercase rounded-btn hover:bg-neutral-200 transition-colors focus-visible:ring-3 focus-visible:ring-cobalt"
+            aria-label={`Switch language. Currently: ${profile.language === 'en' ? 'English' : 'Hindi'}`}
           >
             {profile.language === 'en' ? 'हिंदी' : 'ENG'}
           </button>
 
-          {/* Profile / Preferences Screen Link */}
-          {currentScreen !== 'onboarding' && (
-            <button
-              type="button"
-              onClick={() => setScreen('onboarding')}
-              className="min-h-[44px] px-2.5 py-1.5 border-2 border-ink bg-white font-bold text-sm rounded shadow-hard-sm hover:bg-neutral-100 transition-colors focus-visible:ring-4 focus-visible:ring-ink"
-              aria-label="Edit Assistance Profile and Needs"
-            >
-              Profile
-            </button>
-          )}
-
-          {/* Emergency SOS button */}
-          <SosButton />
+          {/* Settings button */}
+          <button
+            type="button"
+            onClick={() => navigate('/app/settings')}
+            className="min-h-[40px] min-w-[40px] p-2 border border-neutral-300 bg-surface rounded-btn hover:bg-neutral-200 text-ink transition-colors flex items-center justify-center focus-visible:ring-3 focus-visible:ring-cobalt"
+            aria-label="Accessibility and App Settings"
+          >
+            <SettingsIcon size={20} />
+          </button>
         </div>
       </div>
     </header>

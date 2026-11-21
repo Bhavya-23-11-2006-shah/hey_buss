@@ -1,103 +1,113 @@
-# Hey Buss
+# Hey Buss — Accessible Government Transit
 
 > **A bus that is ready for you.**
-
-Hey Buss is a voice-first, accessible government-bus booking Progressive Web App (PWA) tailored specifically for disabled passengers. Built with real transit-signage aesthetics—paper off-white, deep ink, signal-yellow accents, hard shadows, route-number badges, and a signature dot-matrix destination board—it ensures passengers with disabilities can easily find and book low-floor accessible buses with confidence.
-
----
-
-## 🚀 Features
-
-- **Transit-Signage Design System**: WCAG AAA contrast, Atkinson Hyperlegible and editorial serif typography, 18px base text, minimum 56px primary buttons, 3px focus rings, and red exclusively reserved for emergency SOS.
-- **Signature Destination Board**: Live dot-matrix captions of everything the assistant speaks. When idle, continuously scrolls: `"HEY BUSS - A BUS THAT IS READY FOR YOU"`.
-- **Modes with Real Behavioral Adaptations**:
-  - **Blind Mode**: Automatically announces screens and trip alternatives via `SpeechSynthesis`. Enables double-tap anywhere on the screen to talk.
-  - **Deaf Mode**: Always-on captions, vibration and screen-flash visual alerts, plus tap-to-speak conductor phrase cards (*"Please wait for me"*, *"I need the ramp"*, etc.).
-  - **Wheelchair Mode**: Filters and highlights ramp-equipped buses with live free wheelchair bays count.
-- **Voice-First Booking Flow**:
-  - Giant Talk button triggers Web Speech recognition (supporting wake phrases *"Hey Buss"*, *"hey bus"*, *"hey boss"*, *"a bus"*).
-  - Conversational intent extraction with destination matching, alternatives (earlier/later with reason strings), and voice confirmation.
-  - Graceful fallback: If microphone access is denied or SpeechRecognition is unsupported, an inline text box and preset destination chips ensure the flow never dead-ends.
-- **30-Second Undo Window**: Immediate reversible cancellation (`POST /api/bookings/:id/undo`) with visible countdown toast after booking.
-- **Live Ticket & Conductor Assistance**:
-  - Lazy-loaded QR boarding pass, route details, and boarding stop accessibility notes.
-  - Real-time conductor sync (`booking:updated`).
-  - Tactile boarding action buttons with vibration: *I'm at the stop*, *Bus is here* (turns green when status becomes `ASSISTING`), and *Take the next one*.
-- **Emergency SOS**: Press-and-hold 2 seconds with visible countdown, cancel-on-release, geolocation capture, and dispatch alert.
-- **Lazy-Loaded Live Transit Map**: Real-time bus marker tracking with Leaflet, animated route line, and accessible *"N stops away"* vocal banner.
-- **Safe Arrival**: Dedicated *"Reached safely"* confirmation card.
+>
+> Voice-first accessible transit Progressive Web App (PWA) tailored specifically for passengers with disabilities (blind, deaf, wheelchair, and speech difficulties) across Kolkata.
 
 ---
 
-## 🛠️ Tech Stack
+## 🗺️ Route Map & Architecture
 
-- **Framework**: React 19 + TypeScript + Vite
-- **Styling**: Tailwind CSS with custom transit theme, Atkinson Hyperlegible, and Fraunces serif
-- **State Management**: Zustand with persistent storage
-- **Real-Time & Networking**: Socket.IO Client + Fetch API with transparent mock fallback (`src/api/client.ts`)
-- **PWA**: `vite-plugin-pwa` (manifest name & short_name `"Hey Buss"`)
-- **Mapping**: Leaflet (lazy-loaded on demand)
-- **QR Generation**: `qrcode` (lazy-loaded on demand)
+```
+/ (LandingPage)
+  │
+  └── /app (AppShell with Sidebar / Mobile Bottom Tabs)
+        ├── /app (HomePage)
+        ├── /app/book (BookPage — 3-Step Accessible Stepper)
+        ├── /app/track (TrackPage — Live Leaflet Map & Timeline)
+        ├── /app/tickets (TicketsPage — QR Boarding Passes & History)
+        ├── /app/tickets/:id (TicketsPage Detail)
+        ├── /app/help (HelpPage — Type-to-Speak, Voice Cheat Sheet, FAQs)
+        ├── /app/profile (SettingsPage — Passenger Profile & Modes)
+        └── /app/settings (SettingsPage — Display, Themes, Motion, Audio)
+```
 
 ---
 
-## 📦 Setup & Run Instructions
+## 🎨 Design System & Accessibility
 
-### 1. Installation
+- **White, Clean, Low-Vision Friendly**: Crisp `#FFFFFF` background, `#0B1330` headings, `#000000` body text.
+- **Brand Colors**:
+  - Primary & Links: Cobalt `#1238C9` / `#0B2488`
+  - Route Badges Only: Marigold `#FFB800`
+  - Success: `#00A86B`
+  - Warning: `#FF7A1A`
+  - Emergency SOS Only: Red `#E5213B`
+- **Typography**: Atkinson Hyperlegible everywhere. Base font 18px (`1rem`), line height 1.7, max 65ch per line. Scales cleanly up to 200% text zoom. Tabular figures for departure times and route numbers.
+- **Controls**: Minimum 48px tap targets, 56px primary buttons. 3px solid focus ring on every interactive element.
+- **Dual Navigation**:
+  - **Mobile (< 768px)**: Fixed bottom tab bar (Home, Book, raised Marigold Talk button, Track, Tickets).
+  - **Desktop (≥ 768px)**: Left sidebar with full navigation, profile summary, and top header Talk button.
+- **Signature Destination Board**: Slim `#0B1330` dark strip under header displaying live captions of assistant responses.
+- **Themes**: Default Light (White), Dark, and High-Contrast (Black/White/Yellow).
+- **Floating SOS**: Floating red `#E5213B` button with 2-second hold countdown and cancel option on every page.
+
+---
+
+## ⏱️ 10-Second Test Per Page Checklist
+
+### 1. Landing Page (`/`) — 10s
+1. Open [http://localhost:5173/](http://localhost:5173/).
+2. Verify headline: *"A bus that is ready for you."* with Kolkata route indicator.
+3. Observe the gliding bus animation moving along the route line.
+4. Verify the 4-step *How It Works* cards and 4 disability mode cards.
+5. Tap **Start Your Journey** to navigate to `/app`.
+
+### 2. Home Page (`/app`) — 10s
+1. Verify greeting by name (*"Hello, Passenger"*).
+2. Tap the large center **Talk** button (or press Space): observe the assistant prompt on the destination board.
+3. Tap any Quick Destination (*"Salt Lake Sector V"*): verify automatic transition to the booking stepper.
+4. Check the 4-phrase voice cheat sheet and live network stats strip.
+
+### 3. Book Page (`/app/book`) — 10s
+1. Observe the 3-step stepper (1. Where → 2. Pick a Bus → 3. Confirm).
+2. Select boarding stop (*"Howrah Station"*), destination (*"Salt Lake Sector V"*), and tap **Find Accessible Buses**.
+3. In Step 2, observe the Exact Match card and the Earlier/Later alternative cards with free bay counts.
+4. Tap **Select This Bus** to advance to Step 3.
+5. In Step 3, view the assistance checklist and use **Slide to Confirm** (or tap the button) to book.
+6. Verify the 30-second Undo toast appears immediately.
+
+### 4. Track Page (`/app/track`) — 10s
+1. Navigate to **Track** from the bottom bar or sidebar.
+2. Verify the live banner shows *"N stops away"* and calculated ETA.
+3. Check the Leaflet satellite route map with highlighted boarding stop and moving bus marker.
+4. Toggle **Text-Only Mode** to confirm accessible alternative for screen readers.
+5. Tap **I'm at the Stop**: notice status updates to *"Waiting at Stop"* with conductor dispatch.
+
+### 5. Tickets Page (`/app/tickets`) — 10s
+1. Switch between **Upcoming Rides** and **Past Travel History** tabs.
+2. In Upcoming, view the boarding pass with route badge, departure time, and passenger assistance notes.
+3. Verify the QR code rendered cleanly for conductor verification.
+4. Tap **Share Ticket** to test system clipboard/share API.
+5. If booked within 30s, tap **Undo** to test cancellation and bay release.
+
+### 6. Help Page (`/app/help`) — 10s
+1. Check the 24/7 Kolkata Transport Emergency Hotline banner.
+2. In the **Type-to-Speak Device**, type a sentence and tap **Speak** (listen for audio playback).
+3. Tap any of the preset quick phrase chips (*"Please lower the wheelchair ramp"*).
+4. Review the large-text accessibility FAQ.
+
+### 7. Profile & Settings Page (`/app/settings`) — 10s
+1. Change passenger name and emergency contact.
+2. Toggle between **English** and **हिंदी (Hindi)**.
+3. Click through the theme options: **Light**, **Dark**, and **High Contrast** (verify immediate CSS variable swap).
+4. Drag the **Text Scale Size** slider from 100% to 200% (verify layout scales smoothly without breaking).
+5. Toggle **Reduce Motion** and observe marquee and gliding bus stop animating.
+6. Tap **Save All Preferences** and verify success notice.
+
+---
+
+## 🛠️ Build & Development Commands
+
 ```bash
 cd frontend
-npm install
-```
 
-### 2. Configure Environment (Optional)
-If running against a live backend, create a `.env` file from `.env.example`:
-```bash
-cp .env.example .env
-```
-Set `VITE_API_URL` (e.g. `http://localhost:4000`). If omitted, Hey Buss seamlessly runs on its built-in realistic mock client.
-
-### 3. Start Development Server
-```bash
+# Run development server
 npm run dev
-```
-Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-### 4. Build for Production
-```bash
+# Build production bundle with TypeScript checks
 npm run build
+
+# Preview production build
 npm run preview
 ```
-
----
-
-## ⏱️ 10-Second Test Per Mode Checklist
-
-### 1. Blind Mode Test (10s)
-1. Tap **Profile** in the header.
-2. Select the **Blind / Vision** card and tap **Save Profile & Continue**.
-3. Listen for immediate audio narration (*"Blind mode enabled"*, screen introductions).
-4. Double-tap anywhere on the screen: notice the vibration feedback and the vocal prompt asking where you'd like to go.
-5. Tap the giant **Talk** button or select a quick destination (*"Hospital"*): audio reads out matching route, departure time, and booking confirmation.
-
-### 2. Deaf Mode Test (10s)
-1. Open **Profile**, select **Deaf / Hearing**, and save.
-2. Note the **Captions ON** badge on the signature destination board.
-3. Scroll to the **Conductor Phrase Cards** section.
-4. Tap *"I need the ramp"* or *"Please wait for me"*: observe device vibration, screen flash alert, and the device speaking the message out loud for the conductor.
-
-### 3. Wheelchair Mode Test (10s)
-1. In **Profile**, select **Wheelchair** and save.
-2. Return to the Home screen and trigger a search (tap **Hospital**).
-3. Observe the prominent yellow route badges and yellow **2 Bays Free** indicators on the exact and alternative trip cards.
-4. Confirm booking: verify the ticket notes specify hydraulic ramp deployment for the conductor.
-
-### 4. Voice Booking & 30s Undo Test (10s)
-1. On the Home screen, tap the giant yellow **Talk** button (or tap **Hospital**).
-2. Tap **Confirm** to lock in Route 102 at 10:30.
-3. Observe the black & yellow **Undo Booking** toast appear with a ticking 30-second countdown.
-4. Tap **Undo Booking**: observe immediate cancellation, auditory feedback, and updated destination board.
-
-### 5. Boarding & Emergency SOS Test (10s)
-1. On the ticket screen, tap **I'm at the stop**: status changes to *"Passenger waiting at stop"* with vibration.
-2. Tap **Bus is here**: updates conductor to assist boarding and turns green when assisting.
-3. In the top right header, press and hold the red **SOS** button for 2 seconds: observe the countdown ring and emergency dispatch screen. Tap **Cancel** or release early to abort.

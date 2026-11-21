@@ -13,7 +13,7 @@ export const TicketQRCode: React.FC<TicketQRCodeProps> = ({ data }) => {
       width: 180,
       margin: 1,
       color: {
-        dark: '#121212',
+        dark: '#0B1330',
         light: '#FFFFFF',
       },
     })
@@ -23,21 +23,21 @@ export const TicketQRCode: React.FC<TicketQRCodeProps> = ({ data }) => {
 
   if (!qrSrc) {
     return (
-      <div className="w-36 h-36 bg-neutral-100 border-2 border-dashed border-ink flex items-center justify-center font-mono text-xs">
+      <div className="w-36 h-36 bg-neutral-100 border border-dashed border-neutral-300 rounded flex items-center justify-center font-mono text-xs text-muted">
         Generating QR...
       </div>
     );
   }
 
   return (
-    <div className="p-2 bg-white border-2 border-ink rounded shadow-hard-sm inline-block">
+    <div className="p-2 bg-white border border-neutral-300 rounded-btn shadow-sm inline-block text-center">
       <img
         src={qrSrc}
         alt={`Transit Boarding QR Code for Booking ${data}`}
         className="w-36 h-36 mx-auto block"
       />
-      <div className="text-center font-mono text-[11px] font-bold text-ink mt-1">
-        SCAN FOR CONDUCTOR
+      <div className="text-center font-mono text-[10px] font-bold text-muted mt-1 uppercase tracking-wider">
+        Scan for Conductor Verification
       </div>
     </div>
   );

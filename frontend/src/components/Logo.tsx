@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 
 interface LogoProps {
   className?: string;
@@ -6,67 +6,23 @@ interface LogoProps {
 }
 
 export const Logo: React.FC<LogoProps> = ({ className = '', size = 'md' }) => {
-  const heights = {
-    sm: 36,
-    md: 46,
-    lg: 60,
-  };
-
-  const h = heights[size];
-  const w = Math.round(h * 3.1);
-
   return (
-    <div className={`inline-flex items-center select-none ${className}`}>
-      <svg
-        viewBox="0 0 160 50"
-        width={w}
-        height={h}
-        role="img"
-        aria-label="Hey Buss"
-        className="overflow-visible"
+    <div className={`inline-flex items-center gap-1 select-none ${className}`} aria-label="Hey Buss">
+      <span
+        style={{ color: '#0B1330' }}
+        className={`font-black italic tracking-tight ${size === 'lg' ? 'text-4xl' : size === 'sm' ? 'text-xl' : 'text-2xl sm:text-3xl'}`}
       >
-        {/* "Hey" in editorial serif */}
-        <text
-          x="4"
-          y="35"
-          fontFamily="'Fraunces', Georgia, serif"
-          fontSize="36"
-          fontWeight="800"
-          fontStyle="italic"
-          fill="#121212"
-          letterSpacing="-0.5"
-        >
-          Hey
-        </text>
-
-        {/* Signal-yellow route-number badge */}
-        <g transform="translate(74, 5)">
-          <rect
-            x="0"
-            y="0"
-            width="82"
-            height="40"
-            rx="6"
-            fill="#FFDE00"
-            stroke="#121212"
-            strokeWidth="3"
-            filter="drop-shadow(2px 2px 0px #121212)"
-          />
-          {/* "Buss" in bold Atkinson Hyperlegible */}
-          <text
-            x="41"
-            y="29"
-            fontFamily="'Atkinson Hyperlegible', system-ui, sans-serif"
-            fontSize="25"
-            fontWeight="900"
-            fill="#121212"
-            textAnchor="middle"
-            letterSpacing="0.8"
-          >
-            Buss
-          </text>
-        </g>
-      </svg>
+        Hey
+      </span>
+      <span
+        style={{
+          backgroundColor: '#FFB800',
+          color: '#0B1330',
+        }}
+        className={`px-2.5 py-0.5 rounded-md font-black border-2 border-black/10 tracking-wide shadow-sm ${size === 'lg' ? 'text-3xl' : size === 'sm' ? 'text-lg' : 'text-xl sm:text-2xl'}`}
+      >
+        Buss
+      </span>
     </div>
   );
 };

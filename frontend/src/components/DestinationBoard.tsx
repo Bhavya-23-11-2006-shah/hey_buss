@@ -13,31 +13,32 @@ export const DestinationBoard: React.FC = () => {
   return (
     <section
       aria-label="Transit Destination Board and Live Speech Captions"
-      className="w-full bg-ink border-b-4 border-ink shadow-hard-sm"
+      className="w-full dest-board py-2 border-b border-black/20"
+      style={{ backgroundColor: '#0B1330' }}
     >
-      <div className="max-w-2xl mx-auto px-3 py-2 flex items-center gap-3">
+      <div className="max-w-5xl mx-auto px-4 flex items-center gap-3">
         {/* Route status LED indicator badge */}
-        <div className="flex-shrink-0 flex items-center gap-1.5 px-2 py-0.5 bg-[#262626] border border-[#FFDE00] rounded text-[12px] font-bold tracking-wider text-signal-yellow">
-          <span className="w-2 h-2 rounded-full bg-signal-yellow animate-pulse" />
-          <span>DESTINATION</span>
+        <div className="flex-shrink-0 flex items-center gap-1.5 px-2 py-0.5 bg-black/40 border border-marigold/40 rounded text-[11px] font-bold tracking-wider text-marigold">
+          <span className="w-2 h-2 rounded-full bg-marigold animate-pulse" />
+          <span>LIVE BOARD</span>
         </div>
 
-        {/* The Matrix Display */}
+        {/* Caption Display */}
         <div
           role="status"
           aria-live="polite"
-          className="flex-1 overflow-hidden font-matrix text-signal-yellow text-[19px] sm:text-[21px] leading-tight tracking-wider"
+          className="flex-1 overflow-hidden text-marigold text-xs sm:text-sm font-bold tracking-wider"
         >
           {isIdle ? (
             <div className="animate-marquee whitespace-nowrap">
-              ✦ HEY BUSS - A BUS THAT IS READY FOR YOU ✦ LIVE ACCESSIBLE TRANSIT DISPATCH ✦
+              HEY BUSS • ACCESSIBLE GOVERNMENT TRANSIT • VOICE ASSISTANT ACTIVE • 
             </div>
           ) : (
-            <div className="flex items-center gap-2 py-0.5">
-              <span className="text-white text-xs font-sans uppercase font-bold tracking-widest bg-[#333] px-1.5 py-0.5 rounded">
-                VOICE
+            <div className="flex items-center gap-2 py-0.5 truncate">
+              <span className="text-white text-[10px] font-mono uppercase font-bold tracking-widest bg-white/20 px-1.5 py-0.5 rounded">
+                CAPTIONS
               </span>
-              <span className="text-signal-yellow font-bold">
+              <span className="text-marigold truncate">
                 {destinationBoardText}
               </span>
             </div>
@@ -46,7 +47,7 @@ export const DestinationBoard: React.FC = () => {
 
         {/* Deaf mode badge if enabled */}
         {isDeaf && (
-          <div className="hidden sm:flex flex-shrink-0 px-2 py-0.5 bg-[#FFDE00] text-ink text-[11px] font-extrabold uppercase rounded">
+          <div className="hidden sm:flex flex-shrink-0 px-2 py-0.5 bg-marigold text-ink text-[10px] font-black uppercase rounded">
             Captions ON
           </div>
         )}

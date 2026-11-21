@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { apiClient } from '../api/client';
 import { speakText, vibrateDevice } from '../utils/speech';
+import { UndoIcon } from './Icons';
 
 export const UndoToast: React.FC = () => {
   const activeBooking = useStore((state) => state.activeBooking);
@@ -59,20 +60,20 @@ export const UndoToast: React.FC = () => {
   };
 
   return (
-    <div
+    <aside
       role="status"
       aria-live="polite"
-      className="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-40 bg-ink text-white border-3 border-signal-yellow p-4 rounded shadow-hard-lg flex items-center justify-between gap-3 animate-bounce-subtle"
+      className="fixed bottom-24 sm:bottom-6 left-4 right-4 max-w-md mx-auto z-40 bg-white border-2 border-cobalt p-4 rounded-card shadow-card-md flex items-center justify-between gap-3 animate-fade-in"
     >
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-signal-yellow animate-ping" />
-          <span className="font-bold text-sm tracking-wide text-signal-yellow">
-            TRIP CONFIRMED
+          <span className="w-2.5 h-2.5 rounded-full bg-success animate-ping" />
+          <span className="font-bold text-sm tracking-wide text-ink">
+            Trip Confirmed
           </span>
         </div>
-        <p className="text-xs font-mono text-neutral-300">
-          Undo available for <span className="font-bold text-white text-sm">{secondsRemaining}s</span>
+        <p className="text-xs text-muted font-mono mt-0.5">
+          Undo available for <span className="font-bold text-cobalt text-sm tabular">{secondsRemaining}s</span>
         </p>
       </div>
 
@@ -80,10 +81,11 @@ export const UndoToast: React.FC = () => {
         type="button"
         disabled={isUndoing}
         onClick={handleUndo}
-        className="min-h-[46px] px-4 py-1.5 bg-signal-yellow text-ink font-black text-sm uppercase rounded border-2 border-ink hover:bg-yellow-300 active:translate-x-0.5 active:translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white transition-all shadow-hard-sm"
+        className="min-h-[44px] px-3.5 py-1.5 bg-danger text-white font-bold text-xs uppercase rounded-btn hover:bg-red-700 active:scale-95 transition-all shadow-sm flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-danger"
       >
-        {isUndoing ? 'Undoing...' : 'Undo Booking'}
+        <UndoIcon size={16} />
+        <span>{isUndoing ? 'Cancelling...' : 'Undo'}</span>
       </button>
-    </div>
+    </aside>
   );
 };
