@@ -1,0 +1,9 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hey Buss - Conductor</title>
+<style>:root{--ink:#17243c;--paper:#f7f5ed;--yellow:#f3c64f}body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,sans-serif}header{height:74px;border-bottom:3px solid var(--ink);display:flex;align-items:center;padding:0 28px}.wordmark{font-size:28px;font-weight:900}.conductor{margin-left:12px;border-left:2px solid var(--ink);padding-left:12px;font-weight:700}main{max-width:700px;margin:auto;padding:32px}.panel{background:#fff;border:3px solid var(--ink);border-radius:10px;padding:24px}.panel h1{margin-top:0}button{display:block;width:100%;height:72px;margin:12px 0;border:3px solid var(--ink);border-radius:8px;background:#fff;font-size:20px;font-weight:900}.yellow{background:var(--yellow)}#status{font-weight:800;margin-top:16px}</style></head>
+<body><header><div class="wordmark">Hey Buss</div><div class="conductor">Admin</div></header><main><div class="panel"><h1>Demo controls</h1><button id="delay">Delay the 9:00 bus</button><button id="full" class="yellow">Make the 9:00 bus full</button><button id="reset">Reset demo</button><div id="status"></div></div></main>
+<script>
+async function demo(action){await fetch('/api/demo/'+action,{method:'POST'});document.getElementById('status').textContent=action==='reset'?'Demo reset':action==='delay'?'9:00 bus delayed by 12 minutes':'9:00 bus is full'}
+document.getElementById('delay').onclick=()=>demo('delay');document.getElementById('full').onclick=()=>demo('full');document.getElementById('reset').onclick=()=>demo('reset');
+</script></body></html>
