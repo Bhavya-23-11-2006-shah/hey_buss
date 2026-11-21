@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore';
 import { Logo } from './Logo';
 import { SosButton } from './SosButton';
 import { BlindIcon, DeafIcon, WheelchairIcon } from './Icons';
+import { BackendStatus } from './BackendStatus';
 
 export const Header: React.FC = () => {
   const profile = useStore((state) => state.profile);
@@ -95,6 +96,7 @@ export const Header: React.FC = () => {
           <SosButton />
         </div>
       </div>
+      <BackendStatus />
     </header>
   );
 };
