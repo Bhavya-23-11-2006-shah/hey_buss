@@ -103,6 +103,7 @@ export const Header: React.FC<HeaderProps> = ({ onTalkClick, isListening = false
           </button>
         </div>
       </div>
+      <BackendStatus />
     </header>
   );
 };

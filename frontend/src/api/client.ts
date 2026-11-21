@@ -12,8 +12,37 @@ import type {
   VoiceIntentResponse,
 } from "../types";
 
-const VITE_API_URL = import.meta.env.VITE_API_URL || "";
-const IS_REAL_BACKEND = Boolean(VITE_API_URL && VITE_API_URL.trim().length > 0);
+export const VITE_API_URL = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
+export const IS_REAL_BACKEND = Boolean(VITE_API_URL);
+
+export async function checkBackendHealth(): Promise<boolean> {
+  if (!IS_REAL_BACKEND) return false;
+
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(`${VITE_API_URL}/health`, {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!response.ok) return false;
+    const health = (await response.json()) as { ok?: boolean };
+    return health.ok === true;
+  } catch {
+    return false;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+function warnMockFallback(operation: string, reason?: unknown) {
+  const detail = reason instanceof Error
+    ? reason.message
+    : reason === undefined
+      ? "VITE_API_URL is not set."
+      : String(reason);
+  console.warn(`[Hey Buss] ${operation} is using mock data. ${detail}`);
+}
 
 // Default realistic transit stops
 export const MOCK_STOPS: Stop[] = [
@@ -162,8 +191,10 @@ export const apiClient = {
         if (!res.ok) throw new Error("Failed to fetch stops");
         return await res.json();
       } catch (err) {
-        console.warn("Backend unavailable, using mock stops:", err);
+        warnMockFallback("GET /api/stops", err);
       }
+    } else {
+      warnMockFallback("GET /api/stops");
     }
     return MOCK_STOPS;
   },
@@ -187,8 +218,10 @@ export const apiClient = {
         if (!res.ok) throw new Error("Search failed");
         return await res.json();
       } catch (err) {
-        console.warn("Backend unavailable, falling back to mock trip search:", err);
+        warnMockFallback("GET /api/trips/search", err);
       }
+    } else {
+      warnMockFallback("GET /api/trips/search");
     }
 
     const requiresRamp = needs.includes("wheelchair");
@@ -252,8 +285,10 @@ export const apiClient = {
         if (!res.ok) throw new Error("Voice intent failed");
         return await res.json();
       } catch (err) {
-        console.warn("Backend unavailable, falling back to mock voice intent:", err);
+        warnMockFallback("POST /api/voice/intent", err);
       }
+    } else {
+      warnMockFallback("POST /api/voice/intent");
     }
 
     const clean = transcript.toLowerCase().trim();
@@ -439,8 +474,10 @@ export const apiClient = {
         if (!res.ok) throw new Error("Booking failed");
         return await res.json();
       } catch (err) {
-        console.warn("Backend unavailable, falling back to mock booking creation:", err);
+        warnMockFallback("POST /api/bookings", err);
       }
+    } else {
+      warnMockFallback("POST /api/bookings");
     }
 
     const booking: Booking = {
@@ -475,8 +512,10 @@ export const apiClient = {
         if (!res.ok) throw new Error("Booking event failed");
         return await res.json();
       } catch (err) {
-        console.warn("Backend unavailable, falling back to mock booking event:", err);
+        warnMockFallback(`POST /api/bookings/${id}/event`, err);
       }
+    } else {
+      warnMockFallback(`POST /api/bookings/${id}/event`);
     }
 
     if (!activeMockBooking || activeMockBooking.id !== id) {
@@ -525,8 +564,10 @@ export const apiClient = {
         if (!res.ok) throw new Error("Undo failed");
         return await res.json();
       } catch (err) {
-        console.warn("Backend unavailable, falling back to mock undo:", err);
+        warnMockFallback(`POST /api/bookings/${id}/undo`, err);
       }
+    } else {
+      warnMockFallback(`POST /api/bookings/${id}/undo`);
     }
 
     const elapsedSec = (Date.now() - bookingCreationTimestamp) / 1000;
@@ -569,8 +610,10 @@ export const apiClient = {
         if (!res.ok) throw new Error("SOS failed");
         return await res.json();
       } catch (err) {
-        console.warn("Backend unavailable, falling back to mock SOS:", err);
+        warnMockFallback("POST /api/sos", err);
       }
+    } else {
+      warnMockFallback("POST /api/sos");
     }
 
     const sosPayload: SosRaised = {
