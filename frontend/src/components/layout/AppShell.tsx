@@ -91,7 +91,7 @@ export const AppShell: React.FC = () => {
       setDestinationBoardText(response.spokenReply);
       speakText(response.spokenReply, profile.language);
 
-      if (response.uiAction.type === 'SHOW_TRIPS') {
+      if ((response.uiAction.type === 'SHOW_TRIPS' || response.uiAction.type === 'ASK_CONFIRM') && response.uiAction.trips) {
         navigate('/app/book', { state: { voiceResponse: response } });
       } else if (response.uiAction.type === 'BOOKED' && response.uiAction.booking) {
         setActiveBooking(response.uiAction.booking);

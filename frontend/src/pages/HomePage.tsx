@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { apiClient } from '../api/client';
@@ -29,6 +29,8 @@ export const HomePage: React.FC = () => {
 
   const [isListening, setIsListening] = useState(false);
   const [listeningTranscript, setListeningTranscript] = useState('');
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const recognitionRef = useRef<ReturnType<typeof createSpeechRecognizer>>(null);
 
   // Quick destinations (real Kolkata copy)
   const quickDestinations = [
@@ -38,7 +40,7 @@ export const HomePage: React.FC = () => {
 
   // 4-phrase voice cheat sheet
   const voiceCheatSheet = [
-    '“Hey Buss, book next bus to Salt Lake”',
+    '“Hey Buss, book the next bus from Esplanade to Salt Lake Sector V”',
     '“Where is my bus?”',
     '“Take the next one”',
     '“Emergency SOS”',
@@ -48,18 +50,22 @@ export const HomePage: React.FC = () => {
   const handleTalk = () => {
     vibrateDevice(80);
     if (!isSpeechRecognitionSupported()) {
-      alert('Microphone speech recognition is not supported in this browser. Please use the buttons below.');
+      setVoiceError('Voice recognition is unavailable in this browser. Use “Book a Bus” to select stops manually.');
       return;
     }
 
     if (isListening) {
+      recognitionRef.current?.stop();
+      recognitionRef.current = null;
       setIsListening(false);
       return;
     }
 
+    setVoiceError(null);
     const rec = createSpeechRecognizer(
       profile.language,
       async (transcript) => {
+        setVoiceError(null);
         setListeningTranscript(transcript);
         setDestinationBoardText(`LISTENING: "${transcript}"`);
 
@@ -68,7 +74,7 @@ export const HomePage: React.FC = () => {
           setDestinationBoardText(res.spokenReply);
           speakText(res.spokenReply, profile.language);
 
-          if (res.uiAction.type === 'SHOW_TRIPS') {
+          if ((res.uiAction.type === 'SHOW_TRIPS' || res.uiAction.type === 'ASK_CONFIRM') && res.uiAction.trips) {
             navigate('/app/book', { state: { voiceResponse: res } });
           } else if (res.uiAction.type === 'BOOKED' && res.uiAction.booking) {
             setActiveBooking(res.uiAction.booking);
@@ -94,16 +100,33 @@ export const HomePage: React.FC = () => {
           setIsListening(false);
         }
       },
-      () => setIsListening(false),
-      () => setIsListening(false)
+      (error) => {
+        recognitionRef.current = null;
+        setIsListening(false);
+        setVoiceError(error === 'not-allowed'
+          ? 'Microphone access is blocked. Allow microphone access in your browser, then try again.'
+          : `Voice recognition stopped (${error}). Try again or use “Book a Bus”.`);
+      },
+      () => {
+        recognitionRef.current = null;
+        setIsListening(false);
+      }
     );
 
     if (rec) {
-      rec.start();
-      setIsListening(true);
-      const msg = profile.language === 'hi' ? 'बोलिए, कहाँ जाना चाहते हैं?' : 'Listening. Where would you like to go?';
-      setDestinationBoardText(msg);
-      speakText(msg, profile.language);
+      try {
+        setVoiceError(null);
+        recognitionRef.current = rec;
+        rec.start();
+        setIsListening(true);
+        const msg = profile.language === 'hi' ? 'बोलिए, कहाँ जाना चाहते हैं?' : 'Listening. Where would you like to go?';
+        setDestinationBoardText(msg);
+        speakText(msg, profile.language);
+      } catch {
+        recognitionRef.current = null;
+        setIsListening(false);
+        setVoiceError('Could not start the microphone. Allow access in your browser, then try again.');
+      }
     }
   };
 
@@ -171,6 +194,11 @@ export const HomePage: React.FC = () => {
         {listeningTranscript && (
           <p className="text-sm font-mono text-ink bg-white p-2 rounded border border-neutral-300 max-w-sm mx-auto">
             "{listeningTranscript}"
+          </p>
+        )}
+        {voiceError && (
+          <p role="alert" className="mx-auto max-w-lg rounded-btn border border-amber-300 bg-amber-50 p-3 text-left text-sm font-semibold text-amber-950">
+            {voiceError}
           </p>
         )}
       </section>
