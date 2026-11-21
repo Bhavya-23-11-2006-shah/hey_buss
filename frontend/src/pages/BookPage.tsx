@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { apiClient } from '../api/client';
@@ -22,42 +22,37 @@ export const BookPage: React.FC = () => {
   const setDestinationBoardText = useStore((state) => state.setDestinationBoardText);
 
   // 3-step stepper: 1 (Where) -> 2 (Pick a bus) -> 3 (Confirm)
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const initialVoice = location.state?.voiceResponse;
+  const initialDestination = location.state?.destination || initialVoice?.entities?.to;
+  const initialOrigin = initialVoice?.entities?.from || (initialDestination === 'Airport Gate 3' ? 'Howrah Station' : 'Esplanade');
+  const [step, setStep] = useState<1 | 2 | 3>(initialVoice?.uiAction?.trips ? 2 : 1);
 
   // Form states (real Kolkata stops)
-  const [fromStop, setFromStop] = useState('Howrah Station');
-  const [toStop, setToStop] = useState('Salt Lake Sector V');
-  const [time, setTime] = useState('09:00');
+  const [fromStop, setFromStop] = useState(initialOrigin);
+  const [toStop, setToStop] = useState(initialDestination || 'Salt Lake Sector V');
+  const [time, setTime] = useState(initialVoice?.entities?.time || '09:00');
 
   // Search & confirmation results
   const [loading, setLoading] = useState(false);
-  const [tripsResult, setTripsResult] = useState<TripsSearchResult | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [tripsResult, setTripsResult] = useState<TripsSearchResult | null>(initialVoice?.uiAction?.trips || null);
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
 
   // Slide-to-confirm progress
   const [sliderVal, setSliderVal] = useState(0);
 
-  // Pre-fill from navigation state or voice
-  useEffect(() => {
-    if (location.state?.destination) {
-      setToStop(location.state.destination);
-    }
-    if (location.state?.voiceResponse?.uiAction?.trips) {
-      setTripsResult(location.state.voiceResponse.uiAction.trips);
-      setStep(2);
-    }
-  }, [location.state]);
-
-  const kolkataStops = [
-    'Howrah Station',
-    'Esplanade',
-    'Sealdah',
-    'Park Circus',
-    'College Street',
-    'Salt Lake Sector V',
-    'Tollygunge',
-    'Airport Gate 3',
+  const routeOptions = [
+    { from: 'Esplanade', to: 'Salt Lake Sector V' },
+    { from: 'Howrah Station', to: 'Airport Gate 3' },
   ];
+  const destination = routeOptions.find((route) => route.from === fromStop)?.to;
+  const timeDifference = (departure: string) => {
+    const toMinutes = (value: string) => {
+      const [hours, minutes] = value.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+    return toMinutes(departure) - toMinutes(time);
+  };
 
   // Step 1: Search trips
   const handleSearch = async (e?: React.FormEvent) => {
@@ -97,7 +92,8 @@ export const BookPage: React.FC = () => {
 
   // Step 3: Final confirmation
   const handleConfirmBooking = async () => {
-    if (!selectedTrip) return;
+    if (!selectedTrip || confirming) return;
+    setConfirming(true);
     vibrateDevice(150);
 
     try {
@@ -116,7 +112,10 @@ export const BookPage: React.FC = () => {
 
       navigate('/app/tickets');
     } catch {
+      setSliderVal(0);
       alert('Booking could not be completed. Please try an earlier or later bus.');
+    } finally {
+      setConfirming(false);
     }
   };
 
@@ -124,7 +123,7 @@ export const BookPage: React.FC = () => {
     <div className="space-y-6 max-w-3xl mx-auto pb-16">
       {/* Page explanation */}
       <div className="bg-surface border border-neutral-300 p-3 rounded-card text-xs text-muted flex items-center justify-between">
-        <span>📋 <strong>Book:</strong> Three-step accessible reservation with guaranteed wheelchair ramp and bay verification.</span>
+        <span>📋 <strong>Book:</strong> Three-step reservation using the demo trip’s listed ramp and bay availability.</span>
         <span className="font-mono font-bold text-cobalt">Step {step} of 3</span>
       </div>
 
@@ -168,12 +167,14 @@ export const BookPage: React.FC = () => {
               <select
                 id="from-stop"
                 value={fromStop}
-                onChange={(e) => setFromStop(e.target.value)}
+                onChange={(e) => {
+                  const nextFrom = e.target.value;
+                  setFromStop(nextFrom);
+                  setToStop(routeOptions.find((route) => route.from === nextFrom)?.to || '');
+                }}
                 className="input font-bold"
               >
-                {kolkataStops.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
+                {routeOptions.map((route) => <option key={route.from} value={route.from}>{route.from}</option>)}
               </select>
             </div>
 
@@ -188,9 +189,7 @@ export const BookPage: React.FC = () => {
                 onChange={(e) => setToStop(e.target.value)}
                 className="input font-bold"
               >
-                {kolkataStops.filter((s) => s !== fromStop).map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
+                {destination && <option value={destination}>{destination}</option>}
               </select>
             </div>
 
@@ -267,8 +266,8 @@ export const BookPage: React.FC = () => {
                 <TripCard
                   trip={tripsResult.earlier}
                   label="Earlier"
-                  diffMinutes={-15}
-                  reason="Departs earlier with open ramp bay"
+                  diffMinutes={timeDifference(tripsResult.earlier.departs)}
+                  reason="Earlier departure available in the sample schedule"
                   onSelect={handleSelectTrip}
                   showWheelchairProminent={profile.needs.includes('wheelchair')}
                 />
@@ -278,8 +277,8 @@ export const BookPage: React.FC = () => {
                 <TripCard
                   trip={tripsResult.later}
                   label="Later"
-                  diffMinutes={18}
-                  reason="Departs later with guaranteed wheelchair slots"
+                  diffMinutes={timeDifference(tripsResult.later.departs)}
+                  reason="Later departure available in the sample schedule"
                   onSelect={handleSelectTrip}
                   showWheelchairProminent={profile.needs.includes('wheelchair')}
                 />
@@ -295,7 +294,7 @@ export const BookPage: React.FC = () => {
           <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
             <div>
               <h2 className="text-xl font-bold text-ink">3. Confirm Your Booking</h2>
-              <p className="text-xs text-muted">Review trip details and conductor assistance checklist.</p>
+              <p className="text-xs text-muted">Review trip details and the assistance profile stored with this demo booking.</p>
             </div>
             <Button size="sm" variant="ghost" onClick={() => setStep(2)}>
               Change Bus
@@ -316,7 +315,7 @@ export const BookPage: React.FC = () => {
             <div className="flex flex-wrap gap-2 pt-1 text-xs font-bold">
               {selectedTrip.ramp && (
                 <span className="px-2.5 py-1 rounded-full bg-blue-50 text-cobalt border border-blue-200">
-                  Hydraulic Ramp Verified
+                  Ramp listed
                 </span>
               )}
               <span className="px-2.5 py-1 rounded-full bg-green-50 text-success border border-green-200">
@@ -328,7 +327,7 @@ export const BookPage: React.FC = () => {
           {/* Assistance Checklist transmitted to conductor */}
           <div className="space-y-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted">
-              Assistance Instructions Sent to Driver & Conductor:
+              Assistance profile included with the booking:
             </h3>
             <ul className="space-y-2 text-sm font-medium text-ink">
               <li className="flex items-center gap-2 p-2.5 bg-surface rounded-btn border border-neutral-200">
@@ -359,12 +358,13 @@ export const BookPage: React.FC = () => {
                 onChange={(e) => {
                   const val = Number(e.target.value);
                   setSliderVal(val);
-                  if (val >= 95) {
+                  if (val >= 95 && !confirming) {
                     setSliderVal(100);
                     handleConfirmBooking();
                   }
                 }}
-                className="w-full h-3 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-cobalt"
+                disabled={confirming}
+                className="w-full h-3 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-cobalt disabled:opacity-50"
               />
             </div>
 
@@ -372,6 +372,7 @@ export const BookPage: React.FC = () => {
               size="lg"
               variant="primary"
               fullWidth
+              loading={confirming}
               onClick={handleConfirmBooking}
               className="text-lg font-black min-h-[56px]"
             >

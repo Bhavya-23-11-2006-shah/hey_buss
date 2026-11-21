@@ -9,6 +9,8 @@ interface AppState {
   // Passenger Profile
   profile: Profile;
   isOnboarded: boolean;
+  shareLocationForSos: boolean;
+  setShareLocationForSos: (enabled: boolean) => void;
   setProfile: (profile: Partial<Profile>) => void;
   toggleNeed: (need: Need) => void;
   toggleHowToHelp: (help: string) => void;
@@ -55,6 +57,8 @@ export const useStore = create<AppState>()(
 
       profile: DEFAULT_PROFILE,
       isOnboarded: false,
+      shareLocationForSos: false,
+      setShareLocationForSos: (enabled) => set({ shareLocationForSos: enabled }),
 
       setProfile: (updated) =>
         set((state) => ({
@@ -114,6 +118,7 @@ export const useStore = create<AppState>()(
       partialize: (state) => ({
         profile: state.profile,
         isOnboarded: state.isOnboarded,
+        shareLocationForSos: state.shareLocationForSos,
       }),
     }
   )

@@ -44,6 +44,27 @@ function warnMockFallback(operation: string, reason?: unknown) {
   console.warn(`[Hey Buss] ${operation} is using mock data. ${detail}`);
 }
 
+class ApiResponseError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'ApiResponseError';
+    this.status = status;
+  }
+}
+
+async function apiResponseError(response: Response, fallbackMessage: string): Promise<ApiResponseError> {
+  let message = fallbackMessage;
+  try {
+    const body = await response.json() as { error?: unknown };
+    if (typeof body.error === 'string' && body.error.trim()) message = body.error;
+  } catch {
+    // Keep the endpoint-specific message when the error body is not JSON.
+  }
+  return new ApiResponseError(response.status, message);
+}
+
 // Default realistic transit stops
 export const MOCK_STOPS: Stop[] = [
   {
@@ -215,9 +236,10 @@ export const apiClient = {
             time
           )}&needs=${encodeURIComponent(needsQuery)}`
         );
-        if (!res.ok) throw new Error("Search failed");
+        if (!res.ok) throw await apiResponseError(res, "Search failed");
         return await res.json();
       } catch (err) {
+        if (err instanceof ApiResponseError && err.status < 500) throw err;
         warnMockFallback("GET /api/trips/search", err);
       }
     } else {
@@ -282,9 +304,10 @@ export const apiClient = {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ transcript, sessionId, profile }),
         });
-        if (!res.ok) throw new Error("Voice intent failed");
+        if (!res.ok) throw await apiResponseError(res, "Voice intent failed");
         return await res.json();
       } catch (err) {
+        if (err instanceof ApiResponseError && err.status < 500) throw err;
         warnMockFallback("POST /api/voice/intent", err);
       }
     } else {
@@ -471,9 +494,10 @@ export const apiClient = {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ tripId, from, to, profile }),
         });
-        if (!res.ok) throw new Error("Booking failed");
+        if (!res.ok) throw await apiResponseError(res, "Booking failed");
         return await res.json();
       } catch (err) {
+        if (err instanceof ApiResponseError) throw err;
         warnMockFallback("POST /api/bookings", err);
       }
     } else {
@@ -509,9 +533,10 @@ export const apiClient = {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ type }),
         });
-        if (!res.ok) throw new Error("Booking event failed");
+        if (!res.ok) throw await apiResponseError(res, "Booking event failed");
         return await res.json();
       } catch (err) {
+        if (err instanceof ApiResponseError) throw err;
         warnMockFallback(`POST /api/bookings/${id}/event`, err);
       }
     } else {
@@ -561,9 +586,10 @@ export const apiClient = {
           method: "POST",
           headers: { "Content-Type": "application/json" },
         });
-        if (!res.ok) throw new Error("Undo failed");
+        if (!res.ok) throw await apiResponseError(res, "Undo failed");
         return await res.json();
       } catch (err) {
+        if (err instanceof ApiResponseError) throw err;
         warnMockFallback(`POST /api/bookings/${id}/undo`, err);
       }
     } else {
@@ -599,36 +625,43 @@ export const apiClient = {
     return activeMockBooking;
   },
 
-  async sendSos(bookingId: string, lat: number, lng: number): Promise<{ ok: boolean }> {
+  async sendSos(
+    bookingId: string | undefined,
+    lat: number | null,
+    lng: number | null,
+    profile: Profile
+  ): Promise<{ ok: boolean; mocked: boolean; locationAvailable: boolean }> {
     if (IS_REAL_BACKEND) {
       try {
         const res = await fetch(`${VITE_API_URL}/api/sos`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bookingId, lat, lng }),
+          body: JSON.stringify({ bookingId, name: profile.name, howToHelp: profile.howToHelp, lat, lng }),
         });
-        if (!res.ok) throw new Error("SOS failed");
-        return await res.json();
+        if (!res.ok) throw await apiResponseError(res, "SOS alert could not be sent");
+        const result = await res.json() as { ok: boolean; locationAvailable?: boolean };
+        return { ...result, mocked: false, locationAvailable: result.locationAvailable ?? lat !== null };
       } catch (err) {
-        warnMockFallback("POST /api/sos", err);
+        console.error("[Hey Buss] SOS request failed. No backend alert was confirmed.", err);
+        throw err;
       }
-    } else {
-      warnMockFallback("POST /api/sos");
     }
+
+    warnMockFallback("POST /api/sos");
 
     const sosPayload: SosRaised = {
       bookingId,
-      name: activeMockBooking?.profile.name || "Passenger",
+      name: activeMockBooking?.profile.name || profile.name,
       lat,
       lng,
-      howToHelp: activeMockBooking?.profile.howToHelp || ["Immediate assistance needed"],
+      howToHelp: activeMockBooking?.profile.howToHelp || profile.howToHelp,
     };
 
     for (const l of listeners) {
       l.onSosRaised?.(sosPayload);
     }
 
-    return { ok: true };
+    return { ok: true, mocked: true, locationAvailable: lat !== null && lng !== null };
   },
 
   subscribeEvents(cbs: EventCallbacks): () => void {

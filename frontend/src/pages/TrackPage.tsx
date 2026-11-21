@@ -1,7 +1,7 @@
-import React, { Suspense, lazy, useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { apiClient } from '../api/client';
-import type { BusPosition } from '../types';
+import type { BusPosition, Stop } from '../types';
 import { Button } from '../components/ui/Button';
 import { StatusPill } from '../components/ui/StatusPill';
 import { RouteBadge } from '../components/ui/RouteBadge';
@@ -20,23 +20,37 @@ export const TrackPage: React.FC = () => {
   const activeBooking = useStore((state) => state.activeBooking);
   const setActiveBooking = useStore((state) => state.setActiveBooking);
   const profile = useStore((state) => state.profile);
+  const activeRoute = activeBooking?.tripId.startsWith('HB-9') ? 'A4' : 'S12';
   const setDestinationBoardText = useStore((state) => state.setDestinationBoardText);
 
-  const [busPosition, setBusPosition] = useState<BusPosition | null>({
-    tripId: activeBooking?.tripId || 'HB-803',
-    lat: 22.5657,
-    lng: 88.3433,
-    stopsAway: 2,
-    etaMin: 5,
-  });
+  const [busPosition, setBusPosition] = useState<BusPosition | null>(null);
+  const [stops, setStops] = useState<Stop[]>([]);
+  const mapStops = useMemo(() => {
+    if (!activeBooking) return stops;
+    const journeyStops = stops.filter(
+      (stop) => stop.name === activeBooking.from || stop.name === activeBooking.to
+    );
+    return journeyStops.length > 0 ? journeyStops : stops;
+  }, [stops, activeBooking]);
 
   const [textOnlyMode, setTextOnlyMode] = useState(false);
   const [loadingEvent, setLoadingEvent] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void apiClient.getStops().then((loadedStops) => {
+      if (active) setStops(loadedStops);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Subscribe to real-time socket events
   useEffect(() => {
     const unsub = apiClient.subscribeEvents({
       onBookingUpdated: (updated) => {
+        if (!activeBooking || updated.id !== activeBooking.id) return;
         setActiveBooking(updated);
         const msg = updated.message || `Booking status: ${updated.status}`;
         setDestinationBoardText(msg);
@@ -46,6 +60,7 @@ export const TrackPage: React.FC = () => {
         }
       },
       onBusPosition: (pos) => {
+        if (!activeBooking || pos.tripId !== activeBooking.tripId) return;
         setBusPosition((prev) => {
           if (prev && prev.stopsAway !== pos.stopsAway) {
             const etaMsg =
@@ -62,28 +77,12 @@ export const TrackPage: React.FC = () => {
     });
 
     return () => unsub();
-  }, [profile]);
+  }, [profile, activeBooking, setActiveBooking, setDestinationBoardText]);
 
-  // Stops for timeline on Route S12
-  const timelineStops: StopItem[] = [
-    { id: '1', name: 'Howrah Station', status: 'passed', accessibleNote: 'Barrier-free bay' },
-    {
-      id: '2',
-      name: activeBooking?.from || 'Esplanade (Gate 2)',
-      status: busPosition && busPosition.stopsAway <= 1 ? 'current' : 'upcoming',
-      isBoarding: true,
-      accessibleNote: 'Ramp at Gate 2 • Passenger waiting',
-    },
-    { id: '3', name: 'Sealdah', status: 'upcoming', accessibleNote: 'Low-floor boarding curb' },
-    { id: '4', name: 'Park Circus', status: 'upcoming' },
-    {
-      id: '5',
-      name: activeBooking?.to || 'Salt Lake Sector V',
-      status: 'upcoming',
-      isDestination: true,
-      accessibleNote: 'Wide curb and level boarding lane',
-    },
-  ];
+  const timelineStops: StopItem[] = activeBooking ? [
+    { id: 'boarding', name: activeBooking.from, status: busPosition?.stopsAway === 0 ? 'current' : 'upcoming', isBoarding: true },
+    { id: 'destination', name: activeBooking.to, status: 'upcoming', isDestination: true },
+  ] : [];
 
   const handleBookingEvent = async (type: 'AT_STOP' | 'BUS_HERE' | 'ASSISTING' | 'TAKE_NEXT') => {
     if (!activeBooking) return;
@@ -91,22 +90,19 @@ export const TrackPage: React.FC = () => {
       setLoadingEvent(type);
       vibrateDevice([100, 50, 100]);
 
-      let voiceMessage = '';
-      if (type === 'AT_STOP') {
-        voiceMessage = 'Conductor notified: Passenger is waiting at the designated boarding bay.';
-      } else if (type === 'BUS_HERE') {
-        voiceMessage = 'Bus is here! Driver alerted to lower the hydraulic ramp.';
-      } else if (type === 'TAKE_NEXT') {
-        voiceMessage = 'Reassigning to the next accessible bus on Route S12.';
-      }
-
-      setDestinationBoardText(voiceMessage);
-      speakText(voiceMessage, profile.language);
-
       const updated = await apiClient.sendBookingEvent(activeBooking.id, type);
       setActiveBooking(updated);
+      const message = type === 'TAKE_NEXT'
+        ? updated.status === 'REASSIGNED'
+          ? `You are reassigned to the ${updated.departs} demo trip.`
+          : 'No later accessible trip is available; the booking was cancelled.'
+        : `Your ${type === 'AT_STOP' ? 'at-stop' : type === 'BUS_HERE' ? 'bus-arrival' : 'assistance'} status was recorded on the Hey Buss server. This demo does not contact bus staff automatically.`;
+      setDestinationBoardText(message);
+      speakText(message, profile.language);
     } catch {
-      alert('Action could not be completed. Please notify the bus staff.');
+      const message = 'The action could not be saved. No staff notification was confirmed.';
+      setDestinationBoardText(message);
+      speakText(message, profile.language);
     } finally {
       setLoadingEvent(null);
     }
@@ -116,7 +112,7 @@ export const TrackPage: React.FC = () => {
     <div className="space-y-6 max-w-5xl mx-auto pb-16">
       {/* Page explanation */}
       <div className="bg-surface border border-neutral-300 p-3 rounded-card text-xs text-muted flex items-center justify-between">
-        <span>📍 <strong>Track:</strong> Live GPS tracking of your accessible bus with stop timeline and conductor alerts.</span>
+        <span>📍 <strong>Track:</strong> View your accessible route and the backend’s demo bus location stream.</span>
         <button
           type="button"
           onClick={() => setTextOnlyMode(!textOnlyMode)}
@@ -144,13 +140,13 @@ export const TrackPage: React.FC = () => {
                   : 'BUS AT BOARDING STOP'}
               </div>
               <div className="text-xs text-muted">
-                Route S12 • Low Floor Ramp • ETA approx {busPosition.etaMin} mins
+                Route {activeRoute} • Demo bus position • ETA approx {busPosition.etaMin} mins
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <RouteBadge route="S12" className="text-sm px-3 py-1 font-black" />
+            <RouteBadge route={activeRoute} className="text-sm px-3 py-1 font-black" />
             <StatusPill status={activeBooking?.status || 'CONFIRMED'} />
           </div>
         </section>
@@ -163,7 +159,7 @@ export const TrackPage: React.FC = () => {
           {!textOnlyMode ? (
             <div className="card overflow-hidden border border-neutral-300">
               <div className="p-3 bg-surface border-b border-neutral-300 text-xs font-bold text-muted flex justify-between">
-                <span>GPS Live Satellite & Route View</span>
+                <span>OpenFreeMap • Demo bus location</span>
                 <span>Updates every 2s</span>
               </div>
               <Suspense
@@ -173,20 +169,22 @@ export const TrackPage: React.FC = () => {
                   </div>
                 }
               >
-                <TrackingMap busPosition={busPosition} />
+                <TrackingMap busPosition={busPosition} stops={mapStops} />
               </Suspense>
             </div>
           ) : (
             <div className="card p-6 bg-surface border border-neutral-300 space-y-3">
               <h2 className="text-lg font-bold text-ink">Text-Only Live Transit Position</h2>
               <p className="text-sm text-ink">
-                Your bus (Route S12) is currently between <strong>Howrah Station</strong> and <strong>Esplanade</strong>.
+                {busPosition
+                  ? <>Your bus is currently {busPosition.stopsAway} stop{busPosition.stopsAway === 1 ? '' : 's'} away.</>
+                  : <>Waiting for the first bus location update.</>}
               </p>
               <div className="p-3 bg-white rounded border border-neutral-300 font-mono text-xs">
                 <div>CURRENT STATUS: {activeBooking?.status || 'ON_TIME'}</div>
                 <div>BOARDING STOP: {activeBooking?.from || 'Esplanade (Gate 2)'}</div>
                 <div>DESTINATION: {activeBooking?.to || 'Salt Lake Sector V'}</div>
-                <div>ESTIMATED ARRIVAL: {busPosition?.etaMin || 5} minutes</div>
+                <div>ESTIMATED ARRIVAL: {busPosition ? `${busPosition.etaMin} minutes` : 'Waiting for update'}</div>
               </div>
             </div>
           )}
@@ -199,7 +197,7 @@ export const TrackPage: React.FC = () => {
               <Button
                 size="md"
                 variant={activeBooking?.status === 'AT_STOP' ? 'ghost' : 'secondary'}
-                disabled={loadingEvent === 'AT_STOP' || activeBooking?.status === 'AT_STOP'}
+                disabled={!activeBooking || loadingEvent === 'AT_STOP' || activeBooking.status === 'AT_STOP'}
                 onClick={() => handleBookingEvent('AT_STOP')}
                 leftIcon={<LocationIcon size={18} />}
               >
@@ -210,7 +208,7 @@ export const TrackPage: React.FC = () => {
               <Button
                 size="md"
                 variant="primary"
-                disabled={loadingEvent === 'BUS_HERE'}
+                disabled={!activeBooking || loadingEvent === 'BUS_HERE'}
                 onClick={() => {
                   if (activeBooking?.status === 'BUS_HERE') {
                     handleBookingEvent('ASSISTING');
@@ -231,7 +229,7 @@ export const TrackPage: React.FC = () => {
               size="sm"
               variant="ghost"
               fullWidth
-              disabled={loadingEvent === 'TAKE_NEXT'}
+              disabled={!activeBooking || loadingEvent === 'TAKE_NEXT'}
               onClick={() => handleBookingEvent('TAKE_NEXT')}
             >
               Bus crowded or missed? Take next accessible bus →
@@ -242,11 +240,11 @@ export const TrackPage: React.FC = () => {
         {/* Right Col: Route Stop Timeline */}
         <div className="lg:col-span-5 card p-5 bg-white space-y-4">
           <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
-            <h2 className="text-base font-bold text-ink">Route S12 Timeline</h2>
-            <span className="text-xs text-muted">5 Stops</span>
+            <h2 className="text-base font-bold text-ink">Your Trip</h2>
+            <span className="text-xs text-muted">{activeBooking ? '2 stops' : 'No booking'}</span>
           </div>
 
-          <StopTimeline stops={timelineStops} />
+          {activeBooking ? <StopTimeline stops={timelineStops} /> : <p className="text-sm text-muted">Book a trip to see its boarding and destination stops.</p>}
         </div>
       </div>
     </div>

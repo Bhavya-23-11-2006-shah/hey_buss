@@ -43,11 +43,11 @@ export const HelpPage: React.FC = () => {
   const faqs = [
     {
       q: 'How does the driver know I need assistance?',
-      a: 'When you confirm a booking, your assistance profile (ramp needed, wheelchair bay, speak facing me) is automatically transmitted to the conductor and driver dashboard before the bus arrives.',
+      a: 'When you confirm a booking, your assistance profile is stored with the booking and can be viewed on the Hey Buss conductor page. This demo does not notify a real bus crew.',
     },
     {
       q: 'What if a bus arrives and it is too crowded?',
-      a: 'Tap "Take the next one" on your ticket screen. Hey Buss will immediately release your old slot and reassign you to the next accessible service with guaranteed open bays.',
+      a: 'Tap "Take the next one" on your tracking screen. Hey Buss checks the next available trip in this demo; if none is available, the booking is cancelled and its wheelchair bay is released.',
     },
     {
       q: 'How does the double-tap gesture work for Blind mode?',
@@ -55,7 +55,7 @@ export const HelpPage: React.FC = () => {
     },
     {
       q: 'What does the Emergency SOS button do?',
-      a: 'Pressing and holding the red SOS button for 2 seconds transmits your exact GPS location and assistance requirements to central Kolkata transit control and nearby staff.',
+      a: 'Pressing and holding SOS for 2 seconds posts an alert to the connected Hey Buss server. This demo does not contact emergency services or a real transit control room. Location is included only when you allow browser location access.',
     },
   ];
 
@@ -70,14 +70,17 @@ export const HelpPage: React.FC = () => {
       <section className="card p-5 bg-red-50 border-2 border-danger space-y-2" aria-label="Emergency transit support">
         <div className="flex items-center gap-2 text-danger font-bold text-base">
           <AlertIcon size={20} />
-          <span>Kolkata Transport Emergency Hotline</span>
+          <span>Emergency Services</span>
         </div>
         <p className="text-sm text-ink font-medium">
-          24/7 dedicated government control room for accessible transit assistance:
+          For immediate danger, call the official emergency numbers. Hey Buss SOS is not an emergency service.
         </p>
         <div className="text-2xl font-black font-mono text-danger tabular">
-          1800-345-3929 / (033) 2248-5080
+          <a href="tel:112">112</a> / <a href="tel:100">100</a>
         </div>
+        <a className="text-xs underline text-muted" href="https://kolkatapolice.gov.in/contact/" target="_blank" rel="noreferrer">
+          Kolkata Police emergency contact details
+        </a>
       </section>
 
       {/* Type-to-Speak (Communication Aid) */}
@@ -140,7 +143,7 @@ export const HelpPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div className="p-3 bg-white border border-neutral-300 rounded-btn space-y-1">
             <span className="font-bold text-cobalt">Booking</span>
-            <p className="text-xs text-muted">“Book bus to Howrah Station”</p>
+            <p className="text-xs text-muted">“Find a bus from Esplanade to Salt Lake Sector V at 9am”</p>
           </div>
           <div className="p-3 bg-white border border-neutral-300 rounded-btn space-y-1">
             <span className="font-bold text-cobalt">Tracking</span>

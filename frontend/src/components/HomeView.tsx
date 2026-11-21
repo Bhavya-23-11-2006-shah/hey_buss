@@ -48,7 +48,7 @@ export const HomeView: React.FC = () => {
         speakText(intro, profile.language);
       }
     }
-  }, [profile]);
+  }, [profile, setDestinationBoardText]);
 
   // 2. Handle voice input response
   const processTranscript = async (transcript: string) => {
@@ -156,7 +156,7 @@ export const HomeView: React.FC = () => {
         rec.start();
         setIsListening(true);
       }
-    } catch (err) {
+    } catch {
       setMicError('Could not start microphone. You can type your request below.');
       setIsListening(false);
     }

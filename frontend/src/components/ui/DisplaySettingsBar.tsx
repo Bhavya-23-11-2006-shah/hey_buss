@@ -1,5 +1,6 @@
 import React from 'react';
-import { useDisplay, type Theme } from '../../lib/DisplayContext';
+import type { Theme } from '../../lib/display-context';
+import { useDisplay } from '../../lib/useDisplay';
 import { SunIcon, MoonIcon, ContrastIcon, VolumeIcon } from '../Icons';
 import { speakText } from '../../utils/speech';
 import { useStore } from '../../store/useStore';

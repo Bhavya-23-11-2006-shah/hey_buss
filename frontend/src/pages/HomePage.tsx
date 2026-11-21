@@ -25,6 +25,7 @@ export const HomePage: React.FC = () => {
   const setActiveBooking = useStore((state) => state.setActiveBooking);
   const setBookingTimestamp = useStore((state) => state.setBookingTimestamp);
   const setDestinationBoardText = useStore((state) => state.setDestinationBoardText);
+  const activeRoute = activeBooking?.tripId.startsWith('HB-9') ? 'A4' : 'S12';
 
   const [isListening, setIsListening] = useState(false);
   const [listeningTranscript, setListeningTranscript] = useState('');
@@ -32,8 +33,6 @@ export const HomePage: React.FC = () => {
   // Quick destinations (real Kolkata copy)
   const quickDestinations = [
     { name: 'Salt Lake Sector V', note: 'IT Hub • Wide curb and boarding lane', time: '18 min' },
-    { name: 'Howrah Station', note: 'Main rail terminal • Barrier-free bay', time: '12 min' },
-    { name: 'Esplanade (Gate 2)', note: 'Step-free ramp waiting area', time: '8 min' },
     { name: 'Airport Gate 3', note: 'Terminal bus stand • Staff assistance point', time: '35 min' },
   ];
 
@@ -75,6 +74,19 @@ export const HomePage: React.FC = () => {
             setActiveBooking(res.uiAction.booking);
             setBookingTimestamp(Date.now());
             navigate('/app/tickets');
+          } else if (res.uiAction.type === 'SOS') {
+            try {
+              const result = await apiClient.sendSos(activeBooking?.id, null, null, profile);
+              const message = result.mocked
+                ? 'Demo SOS only: no staff or emergency service was contacted.'
+                : 'SOS alert posted to the Hey Buss server. Emergency services were not contacted.';
+              setDestinationBoardText(message);
+              speakText(message, profile.language);
+            } catch {
+              const message = 'Hey Buss could not confirm the SOS alert. Contact emergency services directly.';
+              setDestinationBoardText(message);
+              speakText(message, profile.language);
+            }
           }
         } catch {
           setDestinationBoardText('Could not process voice request. Please try again.');
@@ -135,7 +147,7 @@ export const HomePage: React.FC = () => {
             Tap and say your destination
           </h2>
           <p className="text-sm text-muted">
-            Say your stop in English or Hindi. We will instantly locate a low-floor ramp bus.
+            Say a destination in English or Hindi. Available trips depend on the selected route and time.
           </p>
         </div>
 
@@ -169,7 +181,7 @@ export const HomePage: React.FC = () => {
           <h2 className="text-lg font-bold text-ink">
             {activeBooking && activeBooking.status !== 'CANCELLED' ? 'Your Active Ride' : 'Next Scheduled Accessible Service'}
           </h2>
-          <RouteBadge route="S12" />
+          <RouteBadge route={activeBooking ? activeRoute : 'S12'} />
         </div>
 
         {activeBooking && activeBooking.status !== 'CANCELLED' ? (
@@ -179,7 +191,7 @@ export const HomePage: React.FC = () => {
                 <div className="text-xl font-black text-ink">
                   {activeBooking.from} → {activeBooking.to}
                 </div>
-                <div className="text-xs text-muted">Route {activeBooking.tripId.replace('HB-', '')} • Low floor with ramp</div>
+                <div className="text-xs text-muted">Route {activeRoute} • Trip {activeBooking.tripId}</div>
               </div>
               <div className="text-right">
                 <div className="text-2xl font-mono font-black text-ink tabular">{activeBooking.departs}</div>
@@ -188,7 +200,7 @@ export const HomePage: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-neutral-200">
-              <span className="text-xs text-muted">Conductor has been notified of your assistance profile.</span>
+                <span className="text-xs text-muted">Assistance details are attached to this demo booking.</span>
               <Button size="sm" variant="primary" onClick={() => navigate('/app/tickets')}>
                 View Pass & Track →
               </Button>
@@ -198,8 +210,8 @@ export const HomePage: React.FC = () => {
           <div className="card p-5 space-y-3">
             <div className="flex items-baseline justify-between">
               <div>
-                <div className="text-lg font-bold text-ink">Howrah Station → Salt Lake Sector V</div>
-                <div className="text-xs text-muted">Every 15 minutes • 2 open wheelchair bays</div>
+                <div className="text-lg font-bold text-ink">Esplanade → Salt Lake Sector V</div>
+                <div className="text-xs text-muted">Sample route • Search for current availability</div>
               </div>
               <div className="text-right">
                 <span className="text-xl font-mono font-bold text-ink tabular">Next: 09:00</span>
@@ -212,7 +224,7 @@ export const HomePage: React.FC = () => {
               fullWidth
               onClick={() => handleQuickBook('Salt Lake Sector V')}
             >
-              Book This 09:00 Bus
+              Search This Route
             </Button>
           </div>
         )}
@@ -248,9 +260,9 @@ export const HomePage: React.FC = () => {
 
       {/* Live Status Counts Strip */}
       <section aria-label="Kolkata network status" className="grid grid-cols-3 gap-3">
-        <StatTile label="Buses Active" value="14" subtext="Route S12 & A4" />
-        <StatTile label="Free Bays" value="8" subtext="Wheelchair open" />
-        <StatTile label="Ramp Ready" value="100%" subtext="Verified sensors" />
+        <StatTile label="Sample Routes" value="2" subtext="Demo schedule" />
+        <StatTile label="Stops Listed" value="8" subtext="Kolkata demo data" />
+        <StatTile label="Trip Status" value="Live" subtext="From connected backend" />
       </section>
 
       {/* 4-Phrase Voice Cheat Sheet */}

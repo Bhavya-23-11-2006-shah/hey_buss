@@ -133,11 +133,11 @@ function unknown(profile) {
     return { intent: 'UNKNOWN', entities: {}, spokenReply: profile.language === 'hi' ? 'Main bus ki sahayata tak seemit hoon.' : 'I can only help with bus journeys.', uiAction: { type: 'NONE' }, needsConfirmation: false };
 }
 function createBooking(trip, _spoken, session, profile, onBooking) {
-    if (profile.needs.includes('wheelchair') && trip.baysFree <= 0) {
-        return { intent: 'UNKNOWN', entities: session.slots, spokenReply: 'There is no wheelchair bay left on that bus.', uiAction: { type: 'NONE' }, needsConfirmation: false };
+    if (trip.status === 'FULL' || trip.status === 'CANCELLED' || !(0, store_1.isAccessible)(trip, profile.needs)) {
+        return { intent: 'UNKNOWN', entities: session.slots, spokenReply: 'That bus is no longer available or does not meet your accessibility needs.', uiAction: { type: 'NONE' }, needsConfirmation: false };
     }
-    if ([...store_1.bookings.values()].some(b => b.status !== 'CANCELLED' && b.profile.name === profile.name && b.tripId === trip.id)) {
-        return { intent: 'UNKNOWN', entities: session.slots, spokenReply: 'You already have a booking for that bus.', uiAction: { type: 'NONE' }, needsConfirmation: false };
+    if (session.slots.from !== trip.from || session.slots.to !== trip.to) {
+        return { intent: 'UNKNOWN', entities: session.slots, spokenReply: 'That bus does not serve the stops you requested.', uiAction: { type: 'NONE' }, needsConfirmation: false };
     }
     if (profile.needs.includes('wheelchair'))
         trip.baysFree -= 1;

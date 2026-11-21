@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
-import { useDisplay } from '../lib/DisplayContext';
+import { useDisplay } from '../lib/useDisplay';
 import type { Need } from '../types';
 import { Button } from '../components/ui/Button';
 import {
@@ -20,6 +20,8 @@ export const SettingsPage: React.FC = () => {
   const setProfile = useStore((state) => state.setProfile);
   const toggleNeed = useStore((state) => state.toggleNeed);
   const toggleHowToHelp = useStore((state) => state.toggleHowToHelp);
+  const consentLocation = useStore((state) => state.shareLocationForSos);
+  const setConsentLocation = useStore((state) => state.setShareLocationForSos);
 
   const {
     theme,
@@ -33,7 +35,6 @@ export const SettingsPage: React.FC = () => {
   // Settings form states
   const [passengerName, setPassengerName] = useState(profile.name || 'Passenger');
   const [emergencyPhone, setEmergencyPhone] = useState('+91 98300 12345');
-  const [consentLocation, setConsentLocation] = useState(true);
   const [liteMode, setLiteMode] = useState(false);
   const [voiceSpeed, setVoiceSpeed] = useState(0.95);
   const [vibrationEnabled, setVibrationEnabled] = useState(true);

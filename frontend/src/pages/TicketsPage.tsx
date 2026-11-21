@@ -22,30 +22,6 @@ export const TicketsPage: React.FC = () => {
   // Tabs: Upcoming | Past
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
 
-  // Past tickets archive (real Kolkata history)
-  const pastBookings: Booking[] = [
-    {
-      id: 'B-kol-781',
-      tripId: 'HB-801',
-      from: 'Esplanade (Gate 2)',
-      to: 'Salt Lake Sector V',
-      departs: '08:30',
-      status: 'ASSISTING',
-      profile: { ...profile, name: profile.name || 'Passenger' },
-      message: 'Completed safely with ramp assistance.',
-    },
-    {
-      id: 'B-kol-652',
-      tripId: 'HB-902',
-      from: 'Howrah Station',
-      to: 'Airport Gate 3',
-      departs: '10:10',
-      status: 'ASSISTING',
-      profile: { ...profile, name: profile.name || 'Passenger' },
-      message: 'Completed with wheelchair bay reserved.',
-    },
-  ];
-
   const handleUndoBooking = async (id: string) => {
     vibrateDevice(100);
     try {
@@ -74,7 +50,7 @@ export const TicketsPage: React.FC = () => {
     <div className="space-y-6 max-w-2xl mx-auto pb-16">
       {/* Page explanation */}
       <div className="bg-surface border border-neutral-300 p-3 rounded-card text-xs text-muted flex items-center justify-between">
-        <span>🎫 <strong>Tickets:</strong> Your digital boarding passes, conductor timeline, QR verification, and journey sharing.</span>
+        <span>🎫 <strong>Tickets:</strong> Your active booking, QR code, cancellation window, and journey sharing.</span>
       </div>
 
       {/* Tabs Header */}
@@ -152,16 +128,7 @@ export const TicketsPage: React.FC = () => {
 
       {/* PAST TAB */}
       {activeTab === 'past' && (
-        <div className="space-y-4">
-          {pastBookings.map((b) => (
-            <TicketCard
-              key={b.id}
-              booking={b}
-              showQr={false}
-              onShare={() => handleShare(b)}
-            />
-          ))}
-        </div>
+        <EmptyState icon={<TicketIcon size={36} />} heading="No past trips stored" body="This demo keeps bookings in memory and does not yet save a passenger travel history." />
       )}
     </div>
   );

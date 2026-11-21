@@ -1,7 +1,7 @@
-import React, { Suspense, lazy, useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { apiClient, MOCK_STOPS } from '../api/client';
-import type { BusPosition } from '../types';
+import type { BusPosition, Stop } from '../types';
 import { speakText, vibrateDevice } from '../utils/speech';
 import { LocationIcon, CheckIcon, BusIcon } from './Icons';
 
@@ -18,21 +18,34 @@ export const TicketView: React.FC = () => {
   const reachedSafely = useStore((state) => state.reachedSafely);
   const setReachedSafely = useStore((state) => state.setReachedSafely);
 
-  const [busPosition, setBusPosition] = useState<BusPosition | null>({
-    tripId: activeBooking?.tripId || 'trip-102',
-    lat: 28.618,
-    lng: 77.212,
-    stopsAway: 3,
-    etaMin: 6,
-  });
+  const [busPosition, setBusPosition] = useState<BusPosition | null>(null);
+  const [stops, setStops] = useState<Stop[]>(MOCK_STOPS);
+  const mapStops = useMemo(() => {
+    if (!activeBooking) return stops;
+    const journeyStops = stops.filter(
+      (stop) => stop.name === activeBooking.from || stop.name === activeBooking.to
+    );
+    return journeyStops.length > 0 ? journeyStops : stops;
+  }, [stops, activeBooking]);
 
   const [showMap, setShowMap] = useState(false);
   const [loadingEvent, setLoadingEvent] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void apiClient.getStops().then((loadedStops) => {
+      if (active) setStops(loadedStops);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Subscribe to real-time events
   useEffect(() => {
     const unsub = apiClient.subscribeEvents({
       onBookingUpdated: (updated) => {
+        if (!activeBooking || updated.id !== activeBooking.id) return;
         setActiveBooking(updated);
         const announcement = updated.message || `Booking status updated: ${updated.status}`;
         setDestinationBoardText(announcement);
@@ -42,6 +55,7 @@ export const TicketView: React.FC = () => {
         }
       },
       onBusPosition: (pos) => {
+        if (!activeBooking || pos.tripId !== activeBooking.tripId) return;
         setBusPosition((prev) => {
           if (prev && prev.stopsAway !== pos.stopsAway) {
             const etaMsg =
@@ -58,7 +72,7 @@ export const TicketView: React.FC = () => {
     });
 
     return () => unsub();
-  }, [profile]);
+  }, [profile, activeBooking, setActiveBooking, setDestinationBoardText]);
 
   if (!activeBooking) {
     return (
@@ -134,16 +148,17 @@ export const TicketView: React.FC = () => {
   return (
     <div className="space-y-6 pb-12">
       {/* N Stops Away Live Banner */}
-      {busPosition && (
-        <section
-          role="status"
-          aria-live="polite"
-          className="bg-ink text-white border-3 border-signal-yellow rounded p-3 shadow-hard flex items-center justify-between gap-3"
-        >
+      <section
+        role="status"
+        aria-live="polite"
+        className="bg-ink text-white border-3 border-signal-yellow rounded p-3 shadow-hard flex items-center justify-between gap-3"
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-signal-yellow text-ink border-2 border-white rounded shadow-hard-sm">
+            <BusIcon size={24} />
+          </div>
+          {busPosition ? (
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-signal-yellow text-ink border-2 border-white rounded shadow-hard-sm">
-              <BusIcon size={24} />
-            </div>
             <div>
               <div className="text-xl font-black text-signal-yellow font-mono">
                 {busPosition.stopsAway > 0
@@ -151,19 +166,22 @@ export const TicketView: React.FC = () => {
                   : 'BUS AT THE STOP'}
               </div>
               <div className="text-xs text-neutral-300 font-mono">
-                ETA approx {busPosition.etaMin} minutes • Route 102
+                Demo location • ETA approx {busPosition.etaMin} minutes
               </div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowMap(!showMap)}
-            className="px-3 py-1.5 bg-paper text-ink border-2 border-white text-xs font-mono font-bold rounded shadow-hard-sm hover:bg-neutral-200"
-          >
-            {showMap ? 'Hide Map' : 'Show Map'}
-          </button>
-        </section>
-      )}
+          ) : (
+            <div className="text-sm font-bold text-signal-yellow">Waiting for bus location update</div>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowMap(!showMap)}
+          className="px-3 py-1.5 bg-paper text-ink border-2 border-white text-xs font-mono font-bold rounded shadow-hard-sm hover:bg-neutral-200"
+        >
+          {showMap ? 'Hide Map' : 'Show Map'}
+        </button>
+      </section>
 
       {/* Lazy-Loaded Leaflet Map or Text list fallback */}
       {showMap && (
@@ -174,7 +192,7 @@ export const TicketView: React.FC = () => {
             </div>
           }
         >
-          <TrackingMap busPosition={busPosition} />
+          <TrackingMap busPosition={busPosition} stops={mapStops} />
         </Suspense>
       )}
 

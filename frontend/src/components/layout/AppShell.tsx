@@ -40,9 +40,9 @@ export const AppShell: React.FC = () => {
   // Blind mode: double tap anywhere to talk
   const lastTapRef = useRef<number>(0);
 
-  const handleGlobalTouch = () => {
+  const handleGlobalTouch = (event: React.TouchEvent<HTMLDivElement>) => {
     if (!profile.needs.includes('blind')) return;
-    const now = Date.now();
+    const now = event.timeStamp;
     const timespan = now - lastTapRef.current;
     if (timespan < 350 && timespan > 50) {
       vibrateDevice([120, 60, 120]);
@@ -99,6 +99,20 @@ export const AppShell: React.FC = () => {
         navigate('/app/tickets');
       } else if (response.uiAction.type === 'SHOW_TRACKING') {
         navigate('/app/track');
+      } else if (response.uiAction.type === 'SOS') {
+        try {
+          const booking = useStore.getState().activeBooking;
+          const result = await apiClient.sendSos(booking?.id, null, null, profile);
+          const message = result.mocked
+            ? 'Demo SOS only: no staff or emergency service was contacted.'
+            : 'SOS alert posted to the Hey Buss server. Emergency services were not contacted.';
+          setDestinationBoardText(message);
+          speakText(message, profile.language);
+        } catch {
+          const message = 'Hey Buss could not confirm the SOS alert. Contact emergency services directly.';
+          setDestinationBoardText(message);
+          speakText(message, profile.language);
+        }
       }
     } catch (err) {
       console.warn('Voice processing error:', err);

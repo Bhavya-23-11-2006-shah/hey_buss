@@ -129,11 +129,11 @@ function unknown(profile: Profile): VoiceResponse {
 }
 
 function createBooking(trip: Trip, _spoken: string, session: { slots: Slots; pendingTrip?: Trip }, profile: Profile, onBooking?: (booking: Booking) => void): VoiceResponse {
-  if (profile.needs.includes('wheelchair') && trip.baysFree <= 0) {
-    return { intent: 'UNKNOWN', entities: session.slots, spokenReply: 'There is no wheelchair bay left on that bus.', uiAction: { type: 'NONE' }, needsConfirmation: false }
+  if (trip.status === 'FULL' || trip.status === 'CANCELLED' || !isAccessible(trip, profile.needs)) {
+    return { intent: 'UNKNOWN', entities: session.slots, spokenReply: 'That bus is no longer available or does not meet your accessibility needs.', uiAction: { type: 'NONE' }, needsConfirmation: false }
   }
-  if ([...bookings.values()].some(b => b.status !== 'CANCELLED' && b.profile.name === profile.name && b.tripId === trip.id)) {
-    return { intent: 'UNKNOWN', entities: session.slots, spokenReply: 'You already have a booking for that bus.', uiAction: { type: 'NONE' }, needsConfirmation: false }
+  if (session.slots.from !== trip.from || session.slots.to !== trip.to) {
+    return { intent: 'UNKNOWN', entities: session.slots, spokenReply: 'That bus does not serve the stops you requested.', uiAction: { type: 'NONE' }, needsConfirmation: false }
   }
   if (profile.needs.includes('wheelchair')) trip.baysFree -= 1
   const id = `B-VOICE-${Date.now().toString(36)}`

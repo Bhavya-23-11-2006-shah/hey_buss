@@ -50,6 +50,7 @@ function emitBooking(booking) {
 function nextAccessibleTrip(current, profile) {
     const candidates = store_1.trips
         .filter(t => t.status !== 'FULL' && t.status !== 'CANCELLED')
+        .filter(t => t.route === current.route && t.from === current.from && t.to === current.to)
         .filter(t => (0, store_1.isAccessible)(t, profile.needs))
         .filter(t => (0, store_1.minutes)(t.departs) > (0, store_1.minutes)(current.departs))
         .sort((a, b) => (0, store_1.minutes)(a.departs) - (0, store_1.minutes)(b.departs));
@@ -63,12 +64,12 @@ app.post('/api/bookings', (req, res) => {
     if (!trip || trip.status === 'FULL' || trip.status === 'CANCELLED') {
         return res.status(409).json({ error: 'Trip is not available' });
     }
+    if (trip.from !== parsed.data.from || trip.to !== parsed.data.to) {
+        return res.status(409).json({ error: 'This trip does not serve the selected stops' });
+    }
     if (!(0, store_1.isAccessible)(trip, parsed.data.profile.needs)) {
         return res.status(409).json({ error: 'Trip is not accessible' });
     }
-    if ([...store_1.bookings.values()].some(b => b.status !== 'CANCELLED' && b.profile.name === parsed.data.profile.name &&
-        b.tripId === trip.id))
-        return res.status(409).json({ error: 'Passenger already has an overlapping booking' });
     if (parsed.data.profile.needs.includes('wheelchair')) {
         if (trip.baysFree <= 0)
             return res.status(409).json({ error: 'No wheelchair bay available' });
@@ -96,11 +97,11 @@ app.post('/api/bookings/:id/event', (req, res) => {
         const next = nextAccessibleTrip(current, booking.profile);
         if (next) {
             if (booking.profile.needs.includes('wheelchair')) {
+                if (next.baysFree <= 0)
+                    return res.status(409).json({ error: 'No replacement bay available' });
                 const old = store_1.trips.find(t => t.id === booking.tripId);
                 if (old)
                     old.baysFree += 1;
-                if (next.baysFree <= 0)
-                    return res.status(409).json({ error: 'No replacement bay available' });
                 next.baysFree -= 1;
             }
             booking.tripId = next.id;
@@ -109,6 +110,11 @@ app.post('/api/bookings/:id/event', (req, res) => {
             booking.message = `You have been moved to the ${next.departs} bus on route ${next.route}.`;
         }
         else {
+            if (booking.profile.needs.includes('wheelchair')) {
+                const old = store_1.trips.find(t => t.id === booking.tripId);
+                if (old)
+                    old.baysFree += 1;
+            }
             booking.status = 'CANCELLED';
             booking.message = 'No accessible next bus is available. Your booking is cancelled.';
         }
@@ -140,24 +146,34 @@ app.post('/api/bookings/:id/undo', (req, res) => {
     emitBooking(booking);
     res.json(booking);
 });
-const sosBody = zod_1.z.object({ bookingId: zod_1.z.string(), lat: zod_1.z.number(), lng: zod_1.z.number() });
-app.post('/api/sos', (req, res) => {
+const sosBody = zod_1.z.object({
+    bookingId: zod_1.z.string().min(1).optional(),
+    name: zod_1.z.string().trim().min(1).max(80).optional(),
+    howToHelp: zod_1.z.array(zod_1.z.string().trim().min(1).max(120)).max(10).optional(),
+    lat: zod_1.z.number().min(-90).max(90).nullable(),
+    lng: zod_1.z.number().min(-180).max(180).nullable(),
+}).refine(data => Boolean(data.bookingId || data.name), {
+    message: 'A booking or passenger name is required',
+}).refine(data => (data.lat === null) === (data.lng === null), {
+    message: 'Latitude and longitude must both be supplied or both be null',
+});
+app.post('/api/sos', async (req, res) => {
     const parsed = sosBody.safeParse(req.body);
     if (!parsed.success)
         return res.status(400).json({ error: 'Invalid SOS data' });
-    const booking = store_1.bookings.get(parsed.data.bookingId);
-    if (!booking)
+    const booking = parsed.data.bookingId ? store_1.bookings.get(parsed.data.bookingId) : undefined;
+    if (parsed.data.bookingId && !booking)
         return res.status(404).json({ error: 'Booking not found' });
     const payload = {
-        bookingId: booking.id,
-        name: booking.profile.name,
+        ...(booking ? { bookingId: booking.id } : {}),
+        name: booking?.profile.name || parsed.data.name,
         lat: parsed.data.lat,
         lng: parsed.data.lng,
-        howToHelp: booking.profile.howToHelp,
+        howToHelp: booking?.profile.howToHelp || parsed.data.howToHelp || [],
     };
     io.emit('sos:raised', payload);
-    sms.send(payload);
-    res.json({ ok: true });
+    void sms.send(payload).catch(error => console.error('SOS notification adapter failed', error));
+    res.json({ ok: true, locationAvailable: payload.lat !== null });
 });
 app.post('/api/demo/delay', (_req, res) => {
     const trip = store_1.trips.find(t => t.id === 'HB-803');
@@ -227,7 +243,7 @@ app.post('/api/conductor/auth', (req, res) => {
     const parsed = schema.safeParse(req.body);
     if (!parsed.success)
         return res.status(400).json({ ok: false });
-    res.json({ ok: parsed.data.pin === (process.env.CONDUCTOR_PIN || '1234') });
+    res.json({ ok: Boolean(process.env.CONDUCTOR_PIN) && parsed.data.pin === process.env.CONDUCTOR_PIN });
 });
 const publicDir = node_path_1.default.join(__dirname, '..', 'public');
 app.use(express_1.default.static(publicDir));

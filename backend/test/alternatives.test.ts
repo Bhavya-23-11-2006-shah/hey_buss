@@ -9,9 +9,8 @@ test('9:00 full trip returns accessible earlier and later alternatives', () => {
 
   const result = findAlternatives('09:00', ['wheelchair'], 'Esplanade', 'Salt Lake Sector V')
 
-  assert.equal(result.exact?.id, 'HB-803')
-  assert.equal(result.exact?.status, 'FULL')
+  assert.equal(result.exact, null)
   assert.equal(result.earlier?.id, 'HB-802')
   assert.equal(result.later?.id, 'HB-804')
-  assert.match(result.reason, /9:00 is full/)
+  assert.match(result.reason, /09:00 is full/)
 })

@@ -63,7 +63,7 @@ export const LandingPage: React.FC = () => {
         </h1>
 
         <p className="text-lg sm:text-xl text-muted font-normal max-w-2xl mx-auto">
-          Voice-first government transit for disabled passengers. Say your stop, get a ramp-equipped bus, and the conductor is briefed before you board.
+          An accessible bus booking demo. Search sample Kolkata routes, save an assistance profile, and follow the backend’s simulated bus updates.
         </p>
 
         {/* Start and Install CTA Buttons */}
@@ -98,11 +98,11 @@ export const LandingPage: React.FC = () => {
             <span>Passenger spoke:</span>
           </div>
           <div className="font-bold text-ink text-base">
-            "Hey Buss, book me a bus from Howrah Station to Salt Lake Sector V at 9am"
+            "Hey Buss, find a bus from Esplanade to Salt Lake Sector V at 9am"
           </div>
           <div className="pt-2 border-t border-neutral-200 text-xs font-bold text-cobalt flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-marigold" />
-            <span>Assistant replied: "Route S12 arriving 09:00 with 2 open wheelchair bays. Conductor alerted."</span>
+            <span>Assistant reply depends on the connected backend’s current demo schedule.</span>
           </div>
         </div>
       </section>
@@ -113,8 +113,8 @@ export const LandingPage: React.FC = () => {
         className="card p-6 bg-surface overflow-hidden"
       >
         <div className="flex items-center justify-between text-xs font-mono font-bold text-muted uppercase mb-4">
-          <span>Route S12 • Low Floor Ramp Service</span>
-          <span>Next stop in 3 mins</span>
+          <span>Sample route • Esplanade to Salt Lake Sector V</span>
+          <span>Illustration only</span>
         </div>
 
         <div className="relative py-4">
@@ -133,8 +133,8 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="flex justify-between text-xs font-bold mt-2 text-ink">
-            <span>Howrah Station</span>
-            <span>Esplanade (Gate 2)</span>
+            <span>Esplanade</span>
+            <span>Route S12</span>
             <span>Salt Lake Sector V</span>
           </div>
         </div>
@@ -164,9 +164,9 @@ export const LandingPage: React.FC = () => {
             <div className="w-10 h-10 rounded-btn bg-yellow-50 text-amber-900 flex items-center justify-center font-black text-lg border border-yellow-200">
               2
             </div>
-            <h3 className="text-lg font-bold text-ink">Pick a guaranteed bus</h3>
+            <h3 className="text-lg font-bold text-ink">Choose an available trip</h3>
             <p className="text-sm text-muted">
-              We verify hydraulic ramps and free wheelchair bays in real time before showing any bus.
+            The demo checks each trip’s listed ramp and wheelchair bay availability before booking.
             </p>
           </div>
 
@@ -176,7 +176,7 @@ export const LandingPage: React.FC = () => {
             </div>
             <h3 className="text-lg font-bold text-ink">Get your boarding pass</h3>
             <p className="text-sm text-muted">
-              An accessible QR pass with 30-second undo safety and real-time GPS bus tracking.
+              A booking QR and a 30-second cancellation window. The map shows simulated backend bus positions.
             </p>
           </div>
 
@@ -186,7 +186,7 @@ export const LandingPage: React.FC = () => {
             </div>
             <h3 className="text-lg font-bold text-ink">A person is waiting</h3>
             <p className="text-sm text-muted">
-              The conductor receives your exact assistance instructions before the bus pulls in.
+              Your assistance instructions are stored with your booking for the demo conductor page.
             </p>
           </div>
         </div>
@@ -246,10 +246,10 @@ export const LandingPage: React.FC = () => {
 
       {/* Stats Strip */}
       <section aria-label="System stats" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatTile label="Fleet Availability" value="100%" subtext="Low-floor ramp fitted buses" />
-        <StatTile label="Accessible Stops" value="8 Major" subtext="Kolkata transport hubs" />
-        <StatTile label="Safety Undo" value="30 Sec" subtext="Instant booking reversal" />
-        <StatTile label="Standards" value="WCAG AAA" subtext="High-contrast low-vision verified" />
+        <StatTile label="Sample Fleet" value="6 Trips" subtext="In-memory demo schedule" />
+        <StatTile label="Stops Listed" value="8" subtext="Kolkata sample locations" />
+        <StatTile label="Undo Window" value="30 Sec" subtext="For new bookings" />
+        <StatTile label="Accessibility" value="Tools" subtext="Screen reader and text support" />
       </section>
 
       {/* Why you can trust it */}
@@ -265,7 +265,7 @@ export const LandingPage: React.FC = () => {
               <span>Direct Conductor Link</span>
             </div>
             <p className="text-sm text-muted">
-              Your assistance profile is transmitted directly to the bus crew's onboard terminal before arrival.
+              Your assistance profile is included with the booking and shown on the demo conductor page.
             </p>
           </div>
 
@@ -275,7 +275,7 @@ export const LandingPage: React.FC = () => {
               <span>No Stranded Guarantee</span>
             </div>
             <p className="text-sm text-muted">
-              If a bus is full or delayed, the system automatically finds the closest ramp-equipped service.
+              The booking search lists earlier and later trips that meet the selected accessibility needs.
             </p>
           </div>
 
@@ -285,7 +285,7 @@ export const LandingPage: React.FC = () => {
               <span>Offline First</span>
             </div>
             <p className="text-sm text-muted">
-              Works even with spotty connectivity. Boarding passes and emergency contacts stay cached on your device.
+              The interface is installable as a PWA. Booking and live updates require the backend connection.
             </p>
           </div>
         </div>
@@ -305,13 +305,13 @@ export const LandingPage: React.FC = () => {
               <span className="text-xs font-bold uppercase text-muted">Passenger View</span>
               <RouteBadge route="S12" />
             </div>
-            <div className="text-xl font-black text-ink">Howrah Station → Salt Lake</div>
+            <div className="text-xl font-black text-ink">Esplanade → Salt Lake Sector V</div>
             <div className="text-sm text-muted flex items-center gap-2">
               <ClockIcon size={16} className="text-cobalt" />
               <span>Departs 09:00 AM • Low Floor Ramp</span>
             </div>
             <div className="p-3 bg-blue-50 text-cobalt rounded-btn text-xs font-bold">
-              ✓ Conductor notified: Deploy hydraulic ramp at front entrance.
+              Demo booking • Assistance details attached
             </div>
           </div>
 
@@ -336,7 +336,7 @@ export const LandingPage: React.FC = () => {
           Voice works while the app is open.
         </p>
         <p className="text-xs text-muted">
-          Hey Buss • West Bengal Government Transit Initiative • Built to WCAG AAA Accessibility Standards
+          Hey Buss • Accessible transit booking demo • Service and fleet data are examples
         </p>
       </footer>
     </div>

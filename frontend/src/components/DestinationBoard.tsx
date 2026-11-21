@@ -31,7 +31,7 @@ export const DestinationBoard: React.FC = () => {
         >
           {isIdle ? (
             <div className="animate-marquee whitespace-nowrap">
-              HEY BUSS • ACCESSIBLE GOVERNMENT TRANSIT • VOICE ASSISTANT ACTIVE • 
+              HEY BUSS • ACCESSIBLE TRANSIT DEMO • VOICE ASSISTANT ACTIVE •
             </div>
           ) : (
             <div className="flex items-center gap-2 py-0.5 truncate">

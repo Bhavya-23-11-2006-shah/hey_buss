@@ -36,15 +36,16 @@ export function findAlternatives(time: string, needs: Profile['needs'], from?: s
   const routeTrips = trips.filter(t =>
     (!from || t.from === from) && (!to || t.to === to)
   )
-  const exact = routeTrips.find(t => t.departs === time) || null
+  const requestedTrip = routeTrips.find(t => t.departs === time) || null
   const usable = routeTrips
     .filter(t => t.status !== 'FULL' && t.status !== 'CANCELLED')
     .filter(t => isAccessible(t, needs))
   const sorted = [...usable].sort((a, b) => minutes(a.departs) - minutes(b.departs))
+  const exact = usable.find(t => t.departs === time) || null
   const earlier = sorted.filter(t => minutes(t.departs) < target).at(-1) || null
   const later = sorted.find(t => minutes(t.departs) > target) || null
   let reason = 'Here are the closest accessible buses.'
-  if (exact && exact.status === 'FULL') reason = `${time} is full.`
+  if (requestedTrip && !exact) reason = `${time} is full or does not meet the accessibility requirements.`
   else if (exact) reason = `${time} is available.`
   if (earlier) reason += ` ${earlier.departs} has a free ramp bay.`
   else if (later) reason += ` ${later.departs} has a free ramp bay.`

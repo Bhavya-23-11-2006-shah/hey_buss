@@ -109,9 +109,9 @@ export interface BusDelay {
 }
 
 export interface SosRaised {
-  bookingId: string;
+  bookingId?: string;
   name: string;
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
   howToHelp: string[];
 }

@@ -1,20 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-
-export type Theme = 'light' | 'dark' | 'hc';
-
-interface DisplaySettings {
-  theme: Theme;
-  textScale: number;       // 100–200 (percentage)
-  reduceMotion: boolean;
-  readAloud: boolean;
-}
-
-interface DisplayCtx extends DisplaySettings {
-  setTheme: (t: Theme) => void;
-  setTextScale: (s: number) => void;
-  setReduceMotion: (v: boolean) => void;
-  setReadAloud: (v: boolean) => void;
-}
+import React, { useEffect, useState } from 'react';
+import { DisplayContext, type DisplaySettings, type Theme } from './display-context';
 
 const STORAGE_KEY = 'hb-display';
 
@@ -37,14 +22,6 @@ function defaults(): DisplaySettings {
   };
 }
 
-const Ctx = createContext<DisplayCtx>({
-  ...defaults(),
-  setTheme: () => {},
-  setTextScale: () => {},
-  setReduceMotion: () => {},
-  setReadAloud: () => {},
-});
-
 export function DisplayProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<DisplaySettings>(load);
 
@@ -57,15 +34,13 @@ export function DisplayProvider({ children }: { children: React.ReactNode }) {
     html.style.fontSize = `${(18 * settings.textScale) / 100}px`;
   }, [settings]);
 
-  const ctx: DisplayCtx = {
+  const ctx = {
     ...settings,
-    setTheme:        (theme)        => setSettings(s => ({ ...s, theme })),
-    setTextScale:    (textScale)    => setSettings(s => ({ ...s, textScale })),
-    setReduceMotion: (reduceMotion) => setSettings(s => ({ ...s, reduceMotion })),
-    setReadAloud:    (readAloud)    => setSettings(s => ({ ...s, readAloud })),
+    setTheme:        (theme: Theme)        => setSettings(s => ({ ...s, theme })),
+    setTextScale:    (textScale: number)   => setSettings(s => ({ ...s, textScale })),
+    setReduceMotion: (reduceMotion: boolean) => setSettings(s => ({ ...s, reduceMotion })),
+    setReadAloud:    (readAloud: boolean)  => setSettings(s => ({ ...s, readAloud })),
   };
 
-  return <Ctx.Provider value={ctx}>{children}</Ctx.Provider>;
+  return <DisplayContext.Provider value={ctx}>{children}</DisplayContext.Provider>;
 }
-
-export const useDisplay = () => useContext(Ctx);

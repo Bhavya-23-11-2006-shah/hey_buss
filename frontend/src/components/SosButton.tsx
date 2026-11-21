@@ -11,35 +11,39 @@ interface SosButtonProps {
 export const SosButton: React.FC<SosButtonProps> = ({ floating = true }) => {
   const activeBooking = useStore((state) => state.activeBooking);
   const profile = useStore((state) => state.profile);
+  const shareLocationForSos = useStore((state) => state.shareLocationForSos);
   const triggerScreenFlash = useStore((state) => state.triggerScreenFlash);
   const setDestinationBoardText = useStore((state) => state.setDestinationBoardText);
 
   const [isPressing, setIsPressing] = useState(false);
   const [remainingSec, setRemainingSec] = useState(2.0);
   const [sosSent, setSosSent] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [sosMocked, setSosMocked] = useState(false);
+  const [locationAvailable, setLocationAvailable] = useState(false);
   const [sosError, setSosError] = useState<string | null>(null);
 
-  const pressStartRef = useRef<number | null>(null);
+  const elapsedMsRef = useRef(0);
   const timerRef = useRef<number | null>(null);
 
   const HOLD_DURATION_MS = 2000;
 
   const startHold = (e: React.SyntheticEvent) => {
     e.preventDefault();
-    if (sosSent) return;
+    if (sosSent || isSending || timerRef.current !== null) return;
 
     setIsPressing(true);
     setRemainingSec(2.0);
-    pressStartRef.current = Date.now();
+    setSosError(null);
+    elapsedMsRef.current = 0;
     vibrateDevice(80);
 
     timerRef.current = window.setInterval(() => {
-      if (!pressStartRef.current) return;
-      const elapsed = Date.now() - pressStartRef.current;
-      const rem = Math.max(0, (HOLD_DURATION_MS - elapsed) / 1000);
+      elapsedMsRef.current += 50;
+      const rem = Math.max(0, (HOLD_DURATION_MS - elapsedMsRef.current) / 1000);
       setRemainingSec(Number(rem.toFixed(1)));
 
-      if (elapsed >= HOLD_DURATION_MS) {
+      if (elapsedMsRef.current >= HOLD_DURATION_MS) {
         cancelHold();
         triggerSos();
       }
@@ -49,7 +53,7 @@ export const SosButton: React.FC<SosButtonProps> = ({ floating = true }) => {
   const cancelHold = () => {
     setIsPressing(false);
     setRemainingSec(2.0);
-    pressStartRef.current = null;
+    elapsedMsRef.current = 0;
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -57,13 +61,14 @@ export const SosButton: React.FC<SosButtonProps> = ({ floating = true }) => {
   };
 
   const triggerSos = async () => {
+    setIsSending(true);
     vibrateDevice([300, 150, 300, 150, 400]);
     triggerScreenFlash();
 
-    let lat = 22.5657; // Default Kolkata coordinates
-    let lng = 88.3433;
+    let lat: number | null = null;
+    let lng: number | null = null;
 
-    if ('geolocation' in navigator) {
+    if (shareLocationForSos && 'geolocation' in navigator) {
       try {
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
@@ -73,30 +78,38 @@ export const SosButton: React.FC<SosButtonProps> = ({ floating = true }) => {
         });
         lat = position.coords.latitude;
         lng = position.coords.longitude;
-      } catch (err) {
-        console.warn('Geolocation failed or denied, using fallback:', err);
+      } catch {
+        // Send the alert without coordinates rather than reporting a false location.
       }
     }
 
     try {
-      const bookingId = activeBooking?.id || 'emergency-direct';
-      await apiClient.sendSos(bookingId, lat, lng);
+      const result = await apiClient.sendSos(activeBooking?.id, lat, lng, profile);
+      setSosMocked(result.mocked);
+      setLocationAvailable(result.locationAvailable);
       setSosSent(true);
 
-      const msg =
-        profile.language === 'hi'
-          ? 'एसओएस चेतावनी सक्रिय! कंट्रोल रूम और कंडक्टर को आपकी स्थिति भेजी गई।'
-          : 'EMERGENCY SOS ACTIVE! Control room and conductor alerted with your location.';
+      const msg = result.mocked
+        ? 'This is a local demo alert. No real staff or emergency service was contacted.'
+        : result.locationAvailable
+          ? 'SOS alert posted to the connected Hey Buss staff dashboard.'
+          : 'SOS alert posted. Device location was unavailable.';
 
       setDestinationBoardText(msg);
       speakText(msg, profile.language);
-    } catch (err) {
-      setSosError('Could not send SOS. Please notify nearest staff.');
+    } catch {
+      setSosError('Hey Buss could not confirm the alert. Contact local emergency services directly.');
+    } finally {
+      setIsSending(false);
     }
   };
 
   useEffect(() => {
-    return () => cancelHold();
+    return () => {
+      if (timerRef.current !== null) window.clearInterval(timerRef.current);
+      timerRef.current = null;
+      elapsedMsRef.current = 0;
+    };
   }, []);
 
   const buttonElement = (
@@ -118,8 +131,9 @@ export const SosButton: React.FC<SosButtonProps> = ({ floating = true }) => {
           isPressing ? 'bg-red-700 ring-4 ring-red-300' : 'bg-danger hover:bg-red-700'
         }`}
         style={{ backgroundColor: '#E5213B' }}
-        aria-label="Emergency SOS - Press and hold for 2 seconds to alert transit control"
+        aria-label="Emergency SOS - Press and hold for 2 seconds to raise an alert"
         aria-pressed={isPressing}
+        disabled={isSending || sosSent}
       >
         <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
         <span className="tracking-wider text-base font-black uppercase">SOS</span>
@@ -168,15 +182,20 @@ export const SosButton: React.FC<SosButtonProps> = ({ floating = true }) => {
             <div className="flex items-center gap-3 text-danger">
               <span className="w-4 h-4 rounded-full bg-danger animate-ping" />
               <h2 className="text-2xl font-black text-danger">
-                EMERGENCY SOS ACTIVE
+                {sosMocked ? 'DEMO ALERT ONLY' : 'SOS ALERT RAISED'}
               </h2>
             </div>
             <p className="text-base font-bold text-ink">
-              Your GPS coordinates and assistance instructions have been transmitted to the
-              central transit control room and your bus crew.
+              {sosMocked
+                ? 'This local demo alert was not sent to staff or emergency services.'
+                : 'The alert was posted to the connected Hey Buss staff dashboard. It does not contact emergency services automatically.'}
             </p>
+            {!locationAvailable && !sosMocked && (
+              <p className="text-sm font-semibold text-ink">Your device location was unavailable, so no coordinates were included.</p>
+            )}
+            <p className="text-sm text-muted">For immediate danger, contact local emergency services directly.</p>
             <div className="bg-surface border border-neutral-300 p-3 rounded text-xs font-mono space-y-1">
-              <div>STATUS: CENTRAL DISPATCH NOTIFIED</div>
+              <div>STATUS: {sosMocked ? 'LOCAL DEMO ONLY' : 'HEY BUSS DASHBOARD ALERT'}</div>
               <div>PASSENGER: {profile.name}</div>
               <div>ASSISTANCE: {profile.howToHelp.join(', ') || 'General Assistance'}</div>
             </div>

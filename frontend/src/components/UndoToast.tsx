@@ -32,7 +32,7 @@ export const UndoToast: React.FC = () => {
     }, 500);
 
     return () => clearInterval(interval);
-  }, [bookingTimestamp, activeBooking]);
+  }, [bookingTimestamp, activeBooking, setBookingTimestamp]);
 
   if (!bookingTimestamp || secondsRemaining <= 0 || !activeBooking || activeBooking.status === 'CANCELLED') {
     return null;
