@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hey Buss - Conductor</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root{--ink:#17243c;--paper:#f7f5ed;--yellow:#f3c64f;--red:#c93a3a}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,sans-serif}
+    header{height:74px;display:flex;align-items:center;padding:0 28px;border-bottom:3px solid var(--ink)}
+    .wordmark{font-size:28px;font-weight:900}.conductor{margin-left:12px;border-left:2px solid var(--ink);padding-left:12px;font-weight:700}
+    main{max-width:900px;margin:auto;padding:24px}section{border:3px solid var(--ink);background:#fff;border-radius:10px;min-height:520px;padding:28px}
+    .stop{font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:1px}.stop strong{display:block;font-size:46px;margin-top:8px;text-transform:none}
+    .helpbox{margin-top:28px;border-left:10px solid var(--yellow);background:#faf7e8;padding:20px}.helpbox h2{margin:0 0 10px;font-size:18px}
+    .instructions{font-size:34px;font-weight:800;line-height:1.18}.actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:28px}
+    button{min-height:76px;border:3px solid var(--ink);border-radius:8px;background:#fff;font-size:24px;font-weight:900}
+    .assisting{background:var(--yellow)}.status{font-size:16px;font-weight:800;text-transform:uppercase;margin-top:16px}
+    .green{color:#23725b}.empty{text-align:center;padding-top:150px;font-size:32px}
+    #sos{display:none;position:fixed;inset:0;background:var(--red);color:#fff;z-index:20;padding:30px}
+    #sos.active{display:flex;flex-direction:column;justify-content:center;text-align:center}
+    #sos h1{font-size:70px;margin:0}.sos-name{font-size:42px;font-weight:900;margin:24px}
+    #sos button{background:#fff;color:var(--ink);width:min(420px,90%);margin:20px auto}
+    #pin{position:fixed;inset:0;background:var(--paper);z-index:30;display:grid;place-items:center}
+    #pin div{border:3px solid var(--ink);background:#fff;padding:30px;border-radius:10px;width:min(360px,90%)}
+    #pin input,#pin button{width:100%;height:64px;font-size:22px}#pin input{margin:12px 0;border:2px solid var(--ink);padding:12px}
+    @media(max-width:600px){header{padding:0 16px}.wordmark{font-size:24px}main{padding:12px}section{min-height:480px;padding:18px}.stop strong{font-size:34px}.instructions{font-size:26px}.actions{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div id="pin"><div><h2>Hey Buss conductor</h2><input id="pinInput" type="password" placeholder="Enter PIN" inputmode="numeric"><button id="pinGo">Open</button></div></div>
+  <header><div class="wordmark">Hey Buss</div><div class="conductor">Conductor</div></header>
+  <main><section id="passenger"><div class="empty">Waiting for the next passenger</div></section></main>
+  <div id="sos"><h1>SOS</h1><div class="sos-name" id="sosName"></div><div id="sosHelp"></div><button id="closeSos">Close SOS</button></div>
+  <script>
+    let current=null, acknowledged=false, unlocked=false;
+    const socket=io();
+    function chime(){try{const ac=new AudioContext(),o=ac.createOscillator(),g=ac.createGain();o.frequency.value=880;o.connect(g);g.connect(ac.destination);g.gain.value=.12;o.start();setTimeout(()=>o.stop(),350)}catch(e){}}
+    async function auth(){const pin=document.getElementById('pinInput').value;const r=await fetch('/api/conductor/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin})});const d=await r.json();if(d.ok){document.getElementById('pin').remove();unlocked=true}else alert('Wrong PIN')}
+    document.getElementById('pinGo').onclick=auth;
+    document.getElementById('pinInput').onkeydown=e=>{if(e.key==='Enter')auth()};
+    socket.on('booking:updated',b=>{if(b.status==='CANCELLED')return;if(!current||current.id!==b.id){current=b;acknowledged=false;chime()}else current=b;render()});
+    socket.on('sos:raised',s=>{document.getElementById('sosName').textContent=s.name;document.getElementById('sosHelp').textContent=(s.howToHelp||[]).join(' · ');document.getElementById('sos').classList.add('active')});
+    async function event(type){if(!current)return;const r=await fetch('/api/bookings/'+current.id+'/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type})});current=await r.json();if(type==='AT_STOP')acknowledged=true;render()}
+    function render(){const box=document.getElementById('passenger');if(!current){box.innerHTML='<div class="empty">Waiting for the next passenger</div>';return}const help=current.profile.howToHelp?.length?current.profile.howToHelp.join('<br>'):'Please ask how I would like help';box.innerHTML=`<div class="stop">Boarding stop<strong>${current.from}</strong></div><div class="helpbox"><h2>How to help me</h2><div class="instructions">${help}</div></div><div class="status ${current.status==='BUS_HERE'||current.status==='ASSISTING'?'green':''}">${current.status==='BUS_HERE'||current.status==='ASSISTING'?'Bus is here':''}</div><div class="actions"><button id="ack">Acknowledge</button><button id="assist" class="assisting">Assisting</button></div>`;
+      document.getElementById('ack').onclick=()=>event('AT_STOP');document.getElementById('assist').onclick=()=>event('ASSISTING')}
+    document.getElementById('closeSos').onclick=()=>document.getElementById('sos').classList.remove('active');
+    document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='d')window.open('/admin','_blank','noopener')});
+  </script>
+</body>
+</html>

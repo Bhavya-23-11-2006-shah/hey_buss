@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hey Buss - Conductor</title>
+<style>body{font-family:Arial,sans-serif;max-width900px;margin:auto;padding:20px;background:#f7f5ed;color:#17243c}textarea,input,button{font-size:16px}textarea{width:100%;height:90px;margin:8px 0}button{padding:12px;margin:4px;border:2px solid #17243c;background:#fff}#out{white-space:pre-wrap;background:#fff;border:2px solid #17243c;padding:16px}</style></head>
+<body><h1>Hey Buss test</h1><textarea id="voice" placeholder="Say or type a request">Hey Buss, find a bus from Esplanade to Salt Lake at 9</textarea><br><button id="voiceGo">Send voice intent</button><button id="search">Search 9:00</button><button id="book">Book 9:00</button><button id="event">AT_STOP</button><button id="take">TAKE_NEXT</button><button id="sos">SOS</button><h2>Response</h2><pre id="out"></pre>
+<script>
+let booking=null;
+async function call(url,options){const r=await fetch(url,options);const d=await r.json();document.getElementById('out').textContent=JSON.stringify(d,null,2);return d}
+document.getElementById('voiceGo').onclick=()=>call('/api/voice/intent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transcript:document.getElementById('voice').value,sessionId:'test-session',profile:{name:'Aarav',language:'en',needs:['wheelchair'],howToHelp:['Ask before assisting','Speak clearly']}})}).then(d=>{if(d.uiAction?.booking)booking=d.uiAction.booking});
+document.getElementById('search').onclick=()=>call('/api/trips/search?from=Esplanade&to=Salt%20Lake%20Sector%20V&time=09:00&needs=wheelchair');
+document.getElementById('book').onclick=()=>call('/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tripId:'HB-803',from:'Esplanade',to:'Salt Lake Sector V',profile:{name:'Aarav',language:'en',needs:['wheelchair'],howToHelp:['Ask before assisting','Speak clearly']}})}).then(d=>booking=d);
+async function sendEvent(type){if(!booking){alert('Book first');return}await call('/api/bookings/'+booking.id+'/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type})})}
+document.getElementById('event').onclick=()=>sendEvent('AT_STOP');document.getElementById('take').onclick=()=>sendEvent('TAKE_NEXT');
+document.getElementById('sos').onclick=()=>{if(!booking){alert('Book first');return}call('/api/sos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bookingId:booking.id,lat:22.5657,lng:88.3433})})};
+</script></body></html>
