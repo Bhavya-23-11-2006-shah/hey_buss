@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-paper: #F8F6F0;
+    --text-ink: #121212;
+    --yellow-signal: #FFDE00;
+    --red-sos: #D32F2F;
+  }
+
+  html {
+    font-size: 18px;
+    background-color: var(--bg-paper);
+    color: var(--text-ink);
+  }
+
+  /* Accessible high-contrast focus rings */
+  :focus-visible {
+    outline: 3px solid #121212 !important;
+    outline-offset: 3px !important;
+  }
+
+  /* Prefer reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Dot matrix ticker font and scroll */
+.font-matrix {
+  font-family: 'VT323', 'Courier New', monospace;
+  letter-spacing: 2px;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 18s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+    white-space: normal;
+  }
+}
+
+/* Bus gliding animation */
+@keyframes glide {
+  0% { transform: translateX(-20%); }
+  50% { transform: translateX(85%); }
+  100% { transform: translateX(-20%); }
+}
+
+.animate-bus-glide {
+  animation: glide 10s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-bus-glide {
+    animation: none;
+    transform: translateX(30%);
+  }
+}
+
+/* Flashing screen for Deaf mode alerts */
+@keyframes alertFlash {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgba(255, 222, 0, 0.45); }
+}
+
+.flash-alert {
+  animation: alertFlash 0.5s ease-in-out 3;
+}
