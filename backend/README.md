@@ -1,5 +1,7 @@
 # Hey Buss Backend
 
+> Repository documentation: [root README](../README.md) · [Premium README](../PREMIUM_README.md) · [deployment](../DEPLOY.md)
+
 Node.js, Express, TypeScript, Socket.IO, Zod, and in-memory storage for the Hey Buss accessible transit demo.
 
 ## Run locally

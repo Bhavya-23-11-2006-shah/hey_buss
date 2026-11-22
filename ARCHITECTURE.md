@@ -1,6 +1,6 @@
 # 🚌 Hey Buss — Full System Architecture
 
-> **Hey Buss** is an accessible government transit Progressive Web App (PWA) designed for passengers with disabilities — including blind, deaf, and wheelchair users. It supports voice-based bus booking, real-time tracking, QR boarding passes, SOS emergency alerts, and a live conductor dashboard. Built to **WCAG AAA** standards with full Hindi/English bilingual support.
+> **Hey Buss** is an accessible transit prototype designed for passengers with disabilities, including blind, deaf, and wheelchair users. It supports voice-based bus booking, demo real-time tracking, QR boarding passes, SOS flows, and a live conductor dashboard. It aims to implement WCAG 2.2 AA and GIGW 3.0 principles and supports English, Hindi, and Bengali.
 
 ---
 
@@ -30,9 +30,9 @@
 | **App Name** | Hey Buss |
 | **Target Users** | Passengers with disabilities (blind, deaf, wheelchair) |
 | **Languages** | English, Hindi |
-| **Accessibility Standard** | WCAG AAA |
+| **Accessibility target** | WCAG 2.2 AA and GIGW 3.0 principles |
 | **Architecture Style** | PWA frontend + REST + WebSocket backend |
-| **Demo Mode** | Full offline mock — no backend needed for demos |
+| **Demo Mode** | Demo data and optional mock fallback; live backend is preferred |
 
 ---
 
@@ -624,7 +624,7 @@ Slots persist across turns — user can say "to Salt Lake" then later "at 9am" w
 
 ### General Accessibility
 - Tailwind classes ensure **large tap targets** (min 44×44px)
-- **High-contrast** colour palette (WCAG AAA)
+- **High-contrast** colour palette aligned with accessibility targets
 - **Hindi/English** bilingual — TTS, UI text, voice replies
 - Keyboard navigable — `tabIndex` and `focus:outline` consistent
 
@@ -829,7 +829,7 @@ npm run preview
 | **Backend** | Node.js, TypeScript, Express.js, Socket.IO, Zod, esbuild |
 | **AI / NLP** | Google Gemini LLM (with rule-based NLP fallback) |
 | **Real-time** | Socket.IO (WebSocket + polling) |
-| **Accessibility** | Web Speech API (TTS + STT), Vibration API, WCAG AAA, ARIA |
+| **Accessibility** | Web Speech API (TTS + STT), Vibration API, accessibility labels, responsive themes |
 | **Dev Tools** | Oxlint, Docker, GitHub |
 
 ---

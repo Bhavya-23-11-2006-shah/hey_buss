@@ -1,5 +1,7 @@
 # Hey Buss — Accessible Government Transit
 
+> Repository documentation: [root README](../README.md) · [Premium README](../PREMIUM_README.md) · [deployment](../DEPLOY.md)
+
 > **A bus that is ready for you.**
 >
 > Voice-first accessible transit Progressive Web App (PWA) tailored specifically for passengers with disabilities (blind, deaf, wheelchair, and speech difficulties) across Kolkata.
