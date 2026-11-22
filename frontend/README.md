@@ -1,6 +1,6 @@
 # Hey Buss — Accessible Government Transit
 
-> Repository documentation: [root README](../README.md) · [Premium README](../PREMIUM_README.md) · [deployment](../DEPLOY.md)
+> Repository documentation: [root README](../README.md) · [deployment](../DEPLOY.md)
 
 > **A bus that is ready for you.**
 >

@@ -8,7 +8,6 @@ The repository contains a React PWA frontend and an Express/Socket.IO backend. I
 
 - **Vercel project:** https://vercel.com/bhavya-23-11-2006-shahs-projects/hey-buss
 - **GitHub:** https://github.com/Bhavya-23-11-2006-shah/hey_buss
-- **Premium README:** [PREMIUM_README.md](./PREMIUM_README.md)
 - [Architecture](./ARCHITECTURE.md)
 - [Deployment guide](./DEPLOY.md)
 - [API contract](./contract.md)
