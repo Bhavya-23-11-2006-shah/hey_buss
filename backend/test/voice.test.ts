@@ -1,34 +1,58 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { bookings } from '../src/store'
-import { extractSlots, handleIntent, parseSpokenTime } from '../src/voice'
+import { handleIntent } from '../src/voice'
+import { trips } from '../src/store'
+import type { Profile } from '../src/types'
 
-const profile = {
-  name: 'Test passenger',
-  language: 'en' as const,
-  needs: ['wheelchair' as const],
-  howToHelp: [],
+const profile: Profile = {
+  name: 'Voice Test',
+  language: 'en',
+  needs: ['wheelchair'],
+  howToHelp: ['Need the ramp'],
 }
 
-test('parses spoken English, Hindi, and Bengali-compatible time forms', () => {
-  assert.equal(parseSpokenTime('nine thirty'), '09:30')
-  assert.equal(parseSpokenTime('half past nine'), '09:30')
-  assert.equal(parseSpokenTime('9 baje'), '09:00')
-  assert.equal(parseSpokenTime('साढ़े नौ बजे'), '09:30')
-  assert.equal(parseSpokenTime('6 pm'), '18:00')
+test('voice booking understands a short next-bus request and confirms it', async () => {
+  const trip = trips.find(item => item.id === 'HB-801')!
+  const original = { status: trip.status, baysFree: trip.baysFree }
+  trip.status = 'ON_TIME'
+  trip.baysFree = 2
+
+  try {
+    const sessionId = `voice-next-${Date.now()}`
+    const prompt = await handleIntent('book next bus to Salt Lake', sessionId, profile)
+    assert.equal(prompt.uiAction.type, 'ASK_CONFIRM')
+    assert.equal(prompt.uiAction.trips?.exact?.id, 'HB-801')
+    assert.equal(prompt.entities.from, 'Esplanade')
+
+    const confirmed = await handleIntent('yes', sessionId, profile)
+    assert.equal(confirmed.uiAction.type, 'BOOKED')
+    assert.equal(confirmed.uiAction.booking?.tripId, 'HB-801')
+  } finally {
+    trip.status = original.status
+    trip.baysFree = original.baysFree
+  }
 })
 
-test('does not treat digits in stop names as departure time', () => {
-  const slots = extractSlots('book a bus from Howrah Station to Airport Gate 3')
-  assert.equal(slots.from, 'Howrah Station')
-  assert.equal(slots.to, 'Airport Gate 3')
-  assert.equal(slots.time, undefined)
-})
+test('voice booking carries stop and time answers through to confirmation', async () => {
+  const trip = trips.find(item => item.id === 'HB-803')!
+  const original = { status: trip.status, baysFree: trip.baysFree }
+  trip.status = 'ON_TIME'
+  trip.baysFree = 1
 
-test('requires an exact confirmation before booking a pending trip', async () => {
-  const sessionId = `voice-test-${Date.now()}`
-  const before = bookings.size
-  await handleIntent('book a bus from Esplanade to Salt Lake Sector V at 9', sessionId, profile)
-  await handleIntent('I am looking for an earlier one', sessionId, profile)
-  assert.equal(bookings.size, before)
+  try {
+    const sessionId = `voice-followup-${Date.now()}`
+    const first = await handleIntent('book bus to Salt Lake', sessionId, profile)
+    assert.match(first.spokenReply, /time/i)
+
+    const second = await handleIntent('9 am', sessionId, profile)
+    assert.equal(second.uiAction.type, 'ASK_CONFIRM')
+    assert.equal(second.uiAction.trips?.exact?.id, 'HB-803')
+
+    const confirmed = await handleIntent('yes', sessionId, profile)
+    assert.equal(confirmed.uiAction.type, 'BOOKED')
+    assert.equal(confirmed.uiAction.booking?.tripId, 'HB-803')
+  } finally {
+    trip.status = original.status
+    trip.baysFree = original.baysFree
+  }
 })

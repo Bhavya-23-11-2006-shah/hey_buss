@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import express from 'express'
 import helmet from 'helmet'
 import cors from 'cors'
@@ -52,6 +53,7 @@ function emitBooking(booking: Booking) {
 function nextAccessibleTrip(current: Trip, profile: Profile): Trip | null {
   const candidates = trips
     .filter(t => t.status !== 'FULL' && t.status !== 'CANCELLED')
+    .filter(t => t.route === current.route && t.from === current.from && t.to === current.to)
     .filter(t => isAccessible(t, profile.needs))
     .filter(t => minutes(t.departs) > minutes(current.departs))
     .sort((a, b) => minutes(a.departs) - minutes(b.departs))
@@ -65,13 +67,12 @@ app.post('/api/bookings', (req, res) => {
   if (!trip || trip.status === 'FULL' || trip.status === 'CANCELLED') {
     return res.status(409).json({ error: 'Trip is not available' })
   }
+  if (trip.from !== parsed.data.from || trip.to !== parsed.data.to) {
+    return res.status(409).json({ error: 'This trip does not serve the selected stops' })
+  }
   if (!isAccessible(trip, parsed.data.profile.needs)) {
     return res.status(409).json({ error: 'Trip is not accessible' })
   }
-  if ([...bookings.values()].some(b =>
-    b.status !== 'CANCELLED' && b.profile.name === parsed.data.profile.name &&
-    b.tripId === trip.id
-  )) return res.status(409).json({ error: 'Passenger already has an overlapping booking' })
 
   if (parsed.data.profile.needs.includes('wheelchair')) {
     if (trip.baysFree <= 0) return res.status(409).json({ error: 'No wheelchair bay available' })
@@ -99,9 +100,9 @@ app.post('/api/bookings/:id/event', (req, res) => {
     const next = nextAccessibleTrip(current, booking.profile)
     if (next) {
       if (booking.profile.needs.includes('wheelchair')) {
+        if (next.baysFree <= 0) return res.status(409).json({ error: 'No replacement bay available' })
         const old = trips.find(t => t.id === booking.tripId)
         if (old) old.baysFree += 1
-        if (next.baysFree <= 0) return res.status(409).json({ error: 'No replacement bay available' })
         next.baysFree -= 1
       }
       booking.tripId = next.id
@@ -109,6 +110,10 @@ app.post('/api/bookings/:id/event', (req, res) => {
       booking.status = 'REASSIGNED'
       booking.message = `You have been moved to the ${next.departs} bus on route ${next.route}.`
     } else {
+      if (booking.profile.needs.includes('wheelchair')) {
+        const old = trips.find(t => t.id === booking.tripId)
+        if (old) old.baysFree += 1
+      }
       booking.status = 'CANCELLED'
       booking.message = 'No accessible next bus is available. Your booking is cancelled.'
     }
@@ -139,22 +144,33 @@ app.post('/api/bookings/:id/undo', (req, res) => {
   res.json(booking)
 })
 
-const sosBody = z.object({ bookingId: z.string(), lat: z.number(), lng: z.number() })
-app.post('/api/sos', (req, res) => {
+const sosBody = z.object({
+  bookingId: z.string().min(1).optional(),
+  name: z.string().trim().min(1).max(80).optional(),
+  howToHelp: z.array(z.string().trim().min(1).max(120)).max(10).optional(),
+  lat: z.number().min(-90).max(90).nullable(),
+  lng: z.number().min(-180).max(180).nullable(),
+}).refine(data => Boolean(data.bookingId || data.name), {
+  message: 'A booking or passenger name is required',
+}).refine(data => (data.lat === null) === (data.lng === null), {
+  message: 'Latitude and longitude must both be supplied or both be null',
+})
+
+app.post('/api/sos', async (req, res) => {
   const parsed = sosBody.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: 'Invalid SOS data' })
-  const booking = bookings.get(parsed.data.bookingId)
-  if (!booking) return res.status(404).json({ error: 'Booking not found' })
+  const booking = parsed.data.bookingId ? bookings.get(parsed.data.bookingId) : undefined
+  if (parsed.data.bookingId && !booking) return res.status(404).json({ error: 'Booking not found' })
   const payload = {
-    bookingId: booking.id,
-    name: booking.profile.name,
+    ...(booking ? { bookingId: booking.id } : {}),
+    name: booking?.profile.name || parsed.data.name!,
     lat: parsed.data.lat,
     lng: parsed.data.lng,
-    howToHelp: booking.profile.howToHelp,
+    howToHelp: booking?.profile.howToHelp || parsed.data.howToHelp || [],
   }
   io.emit('sos:raised', payload)
-  sms.send(payload)
-  res.json({ ok: true })
+  void sms.send(payload).catch(error => console.error('SOS notification adapter failed', error))
+  res.json({ ok: true, locationAvailable: payload.lat !== null })
 })
 
 app.post('/api/demo/delay', (_req, res) => {
@@ -226,7 +242,7 @@ app.post('/api/conductor/auth', (req, res) => {
   const schema = z.object({ pin: z.string() })
   const parsed = schema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ ok: false })
-  res.json({ ok: parsed.data.pin === (process.env.CONDUCTOR_PIN || '1234') })
+  res.json({ ok: Boolean(process.env.CONDUCTOR_PIN) && parsed.data.pin === process.env.CONDUCTOR_PIN })
 })
 
 const publicDir = path.join(__dirname, '..', 'public')

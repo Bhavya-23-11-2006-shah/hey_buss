@@ -1,0 +1,379 @@
+/* ============================================================
+   Hey Buss — Global Styles
+   Design tokens live here as CSS custom properties.
+   Theme variants swap the properties; Tailwind reads them.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design Tokens (default = white/light) ─────────────────── */
+:root {
+  --color-bg:        #FFFFFF;
+  --color-surface:   #F5F7FC;
+  --color-border:    #D1D5DB;
+  --color-ink:       #0B1330;
+  --color-muted:     #6B7280;
+  --color-cobalt:    #1238C9;
+  --color-cobalt-dk: #0B2488;
+  --color-marigold:  #FFB800;
+  --color-success:   #00A86B;
+  --color-warning:   #FF7A1A;
+  --color-danger:    #E5213B;
+
+  /* Typography scale in rem (root = 18px) */
+  --text-sm:   0.778rem;  /* ~14px */
+  --text-base: 1rem;      /* 18px  */
+  --text-lead: 1.125rem;
+  --text-h3:   1.333rem;  /* ~24px */
+  --text-h2:   1.778rem;  /* ~32px */
+  --text-h1-m: 2rem;      /* 36px mobile */
+  --text-h1:   3.111rem;  /* 56px desktop */
+
+  --radius-card: 0.667rem;
+  --radius-btn:  0.5rem;
+
+  --shadow-card: 0 1px 3px 0 rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.06);
+  --shadow-card-md: 0 4px 12px 0 rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.06);
+
+  --focus-ring: 0 0 0 3px var(--color-cobalt);
+
+  color-scheme: light;
+}
+
+/* ── Dark theme ─────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --color-bg:      #0D1117;
+  --color-surface: #161B22;
+  --color-border:  #30363D;
+  --color-ink:     #E6EDF3;
+  --color-muted:   #8B949E;
+  --color-cobalt:  #58A6FF;
+  --color-cobalt-dk: #79C0FF;
+  color-scheme: dark;
+}
+
+/* ── High-Contrast theme ────────────────────────────────────── */
+[data-theme="hc"] {
+  --color-bg:      #000000;
+  --color-surface: #111111;
+  --color-border:  #FFFFFF;
+  --color-ink:     #FFFFFF;
+  --color-muted:   #EEEEEE;
+  --color-cobalt:  #FFFF00;
+  --color-cobalt-dk: #FFD700;
+  --color-marigold:#FFFF00;
+  --color-success: #00FF88;
+  --color-warning: #FF8800;
+  --color-danger:  #FF4444;
+  --focus-ring:    0 0 0 3px #FFFF00;
+  color-scheme: dark;
+}
+
+/* ── System dark mode fallback ───────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-bg:      #0D1117;
+    --color-surface: #161B22;
+    --color-border:  #30363D;
+    --color-ink:     #E6EDF3;
+    --color-muted:   #8B949E;
+    --color-cobalt:  #58A6FF;
+    color-scheme: dark;
+  }
+}
+
+/* ── Base Styles ─────────────────────────────────────────────── */
+@layer base {
+  html {
+    font-size: 18px;
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    font-family: 'Atkinson Hyperlegible', Inter, system-ui, Verdana, sans-serif;
+    line-height: 1.7;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* Tabular figures for numbers */
+  .tabular, time, .route-num, .departs-time {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Universal focus ring */
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring) !important;
+    border-radius: var(--radius-btn);
+  }
+
+  h1, h2, h3, h4 {
+    color: var(--color-ink);
+    line-height: 1.25;
+    max-width: 65ch;
+  }
+
+  a {
+    color: var(--color-cobalt);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* Max line width for body text readability */
+  p, li {
+    max-width: 65ch;
+  }
+}
+
+/* ── Component Layer ─────────────────────────────────────────── */
+@layer components {
+  /* Skip link */
+  .skip-link {
+    @apply absolute -top-14 left-4 z-[9999] px-4 py-2 font-bold text-white rounded-btn;
+    background: var(--color-cobalt);
+    transition: top 0.15s;
+  }
+  .skip-link:focus {
+    top: 1rem;
+  }
+
+  /* Destination board strip */
+  .dest-board {
+    background: #0B1330;
+    color: #FFB800;
+    font-family: 'Atkinson Hyperlegible', monospace;
+    letter-spacing: 0.08em;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  /* Card base */
+  .card {
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+  .card-surface {
+    background: var(--color-surface);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-bold rounded-btn
+           transition-all duration-150 select-none cursor-pointer;
+    min-height: 3rem; /* 48px */
+    padding: 0 1.333rem;
+    font-size: var(--text-base);
+  }
+  .btn:disabled {
+    @apply opacity-40 cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn;
+    min-height: 3.5rem; /* 56px */
+    background: var(--color-cobalt);
+    color: #FFFFFF;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-cobalt-dk);
+  }
+
+  .btn-secondary {
+    @apply btn;
+    background: var(--color-bg);
+    color: var(--color-cobalt);
+    border: 2px solid var(--color-cobalt);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: #EBF0FD;
+  }
+
+  .btn-ghost {
+    @apply btn;
+    background: transparent;
+    color: var(--color-ink);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--color-surface);
+  }
+
+  .btn-danger {
+    @apply btn;
+    background: var(--color-danger);
+    color: #FFFFFF;
+  }
+
+  /* Navigation tab */
+  .nav-tab {
+    @apply flex flex-col items-center gap-0.5 px-3 py-2 rounded-btn text-xs font-bold
+           transition-colors duration-150 cursor-pointer select-none;
+    color: var(--color-muted);
+    min-width: 3rem;
+    min-height: 3rem;
+  }
+  .nav-tab.active, .nav-tab[aria-current="page"] {
+    color: var(--color-cobalt);
+  }
+  .nav-tab:hover:not(.active) {
+    color: var(--color-ink);
+    background: var(--color-surface);
+  }
+
+  /* Status pill base */
+  .status-pill {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold;
+    border: 1.5px solid currentColor;
+  }
+
+  /* Section dividers */
+  .section-alt {
+    background: var(--color-surface);
+  }
+
+  /* Input */
+  .input {
+    @apply w-full rounded-btn font-normal;
+    min-height: 3rem;
+    padding: 0 0.889rem;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    border: 1.5px solid var(--color-border);
+    font-size: var(--text-base);
+    transition: border-color 0.15s;
+  }
+  .input:focus {
+    border-color: var(--color-cobalt);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(18,56,201,0.15);
+  }
+  [data-theme="hc"] .input:focus {
+    box-shadow: 0 0 0 3px #FFFF00;
+  }
+}
+
+/* ── Utility overrides ───────────────────────────────────────── */
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .text-pretty  { text-wrap: pretty; }
+}
+
+/* ── Marquee / Destination Board ─────────────────────────────── */
+.animate-marquee {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 20s linear infinite;
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee { animation: none; white-space: normal; }
+  .animate-bus-glide { animation: none; transform: translateX(40%); }
+  [data-reduce-motion="true"] .animate-marquee { animation: none; white-space: normal; }
+  [data-reduce-motion="true"] .animate-bus-glide { animation: none; }
+}
+
+/* ── Bus glide animation ────────────────────────────────────── */
+.animate-bus-glide {
+  animation: busGlide 12s ease-in-out infinite;
+}
+
+@keyframes busGlide {
+  0%   { transform: translateX(-5%); }
+  50%  { transform: translateX(85%); }
+  100% { transform: translateX(-5%); }
+}
+
+/* ── Ticket print-in animation ──────────────────────────────── */
+.animate-ticket-in {
+  animation: ticketIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+
+@keyframes ticketIn {
+  0%   { transform: translateY(-8px) scaleY(0.95); opacity: 0; }
+  100% { transform: translateY(0) scaleY(1); opacity: 1; }
+}
+
+/* ── Fade in ────────────────────────────────────────────────── */
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Skeleton shimmer ───────────────────────────────────────── */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 25%,
+    var(--color-border) 50%,
+    var(--color-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* ── Deaf mode screen flash ─────────────────────────────────── */
+.flash-alert {
+  animation: alertFlash 0.5s ease-in-out 3;
+}
+
+@keyframes alertFlash {
+  0%, 100% { background-color: transparent; }
+  50%       { background-color: rgba(229,33,59,0.18); }
+}
+
+/* ── SOS button ping ────────────────────────────────────────── */
+.sos-ping::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid var(--color-danger);
+  animation: sosPing 1s ease-out infinite;
+}
+
+@keyframes sosPing {
+  0%   { transform: scale(1);   opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* ── Ticket perforated edge ─────────────────────────────────── */
+.ticket-perf {
+  background-image: radial-gradient(circle at 0 50%, var(--color-bg) 8px, transparent 8px),
+                    radial-gradient(circle at 100% 50%, var(--color-bg) 8px, transparent 8px);
+  background-size: 100% 100%;
+  border-top: 2px dashed var(--color-border);
+  margin: 0 -1.5px;
+}
+
+/* ── Mobile nav safe area ────────────────────────────────────── */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0.5rem); }
+.mb-nav  { margin-bottom: calc(5rem + env(safe-area-inset-bottom, 0)); }

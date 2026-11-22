@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 50" width="160" height="50" role="img" aria-label="Hey Buss">
+  <text x="5" y="35" font-family="'Fraunces', Georgia, serif" font-size="34" font-weight="700" font-style="italic" fill="#121212">Hey</text>
+  <rect x="72" y="6" width="82" height="38" rx="6" fill="#FFDE00" stroke="#121212" stroke-width="3" />
+  <text x="113" y="33" font-family="'Atkinson Hyperlegible', system-ui, sans-serif" font-size="24" font-weight="900" fill="#121212" text-anchor="middle" letter-spacing="0.5">Buss</text>
+</svg>
