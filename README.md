@@ -1,46 +1,118 @@
-# Hey Buss
+<div align="center">
 
-Hey Buss is an accessible, voice-first public-bus planning and booking demo for Kolkata passengers with disabilities.
+<img src="./frontend/public/icon.svg" width="112" alt="Hey Buss logo">
 
-The repository contains a React PWA frontend and an Express/Socket.IO backend. It supports English, Hindi, and Bengali interface text and provides demo booking, live status, QR tickets, conductor tools, and SOS flows.
+# 🚌 Hey Buss
 
-## Links
+### A bus that is ready for you.
 
-- **Vercel project:** https://vercel.com/bhavya-23-11-2006-shahs-projects/hey-buss
-- **GitHub:** https://github.com/Bhavya-23-11-2006-shah/hey_buss
-- [Architecture](./ARCHITECTURE.md)
-- [Deployment guide](./DEPLOY.md)
-- [API contract](./contract.md)
-- [Frontend README](./frontend/README.md)
-- [Backend README](./backend/README.md)
+**A voice-first, accessibility-led transit experience for Kolkata**
 
-## Main features
+[![Live Project](https://img.shields.io/badge/Live-Vercel-1238C9?style=for-the-badge&logo=vercel)](https://vercel.com/bhavya-23-11-2006-shahs-projects/hey-buss)
+[![Frontend](https://img.shields.io/badge/Frontend-React%2019-61DAFB?style=for-the-badge&logo=react&logoColor=0B1330)](./frontend)
+[![Backend](https://img.shields.io/badge/Backend-Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](./backend)
+[![Languages](https://img.shields.io/badge/ENGLISH--हिंदी--বাংলা-007A4D?style=for-the-badge)](#accessibility)
 
-- Voice trip search and confirmation
-- English, Hindi, and Bengali language support
-- Wheelchair and other passenger accessibility needs
-- Accessible trip alternatives: earlier, exact, and later
-- Booking, undo, status, QR ticket, and sharing flows
-- Live conductor dashboard and demo controls
-- SOS panel with explicit location and contact behavior
-- Light, dark, and high-contrast display modes
-- Mobile bottom navigation and desktop sidebar
-- PWA support with installable frontend assets
+<br />
 
-## Repository structure
+[Explore the app](https://vercel.com/bhavya-23-11-2006-shahs-projects/hey-buss)
+·
+[Architecture](./ARCHITECTURE.md)
+·
+[Deployment](./DEPLOY.md)
+·
+[API contract](./contract.md)
 
-```text
-hey_buss/
-├── frontend/       React 19, Vite, TypeScript, PWA
-├── backend/        Express, Socket.IO, Zod, TypeScript
-├── ARCHITECTURE.md System architecture
-├── DEPLOY.md       Vercel and Render deployment
-└── contract.md     API and data contract
+</div>
+
+---
+
+## ✨ The idea
+
+**Hey Buss** makes public-bus journeys feel less uncertain for passengers with disabilities.
+
+It combines voice guidance, clear trip choices, accessible booking details, live conductor tools, and multiple ways to interact—so a journey can begin with speech, touch, typing, or assistive technology.
+
+> Built for blind, low-vision, deaf, wheelchair, elderly, and cognitive-accessibility needs—not added as an afterthought.
+
+---
+
+## 💛 What you can do
+
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <h3>🗣️ Talk</h3>
+      Search in English, Hindi, or Bengali and receive a spoken reply with clear captions.
+    </td>
+    <td width="33%" valign="top">
+      <h3>♿ Choose access</h3>
+      Compare buses by ramp, wheelchair bay, low floor, audio, visual display, and priority seating.
+    </td>
+    <td width="33%" valign="top">
+      <h3>🎫 Travel clearly</h3>
+      Confirm a trip, view a QR ticket, track the bus, and manage the booking.
+    </td>
+  </tr>
+</table>
+
+<br />
+
+- Voice-first search and confirmation
+- Earlier, exact, and later accessible alternatives
+- Route, departure time, and wheelchair-bay recap
+- Light, dark, and high-contrast themes
+- Large-text and reduced-motion controls
+- Conductor dashboard for passenger assistance
+- Demo delay, full-bus, and reassignment flows
+- QR tickets, sharing, and text-only tracking
+
+---
+
+## 🧭 One journey, made simple
+
+```mermaid
+flowchart LR
+    A[Choose language & needs] --> B[Find a stop]
+    B --> C[Compare accessible buses]
+    C --> D[Confirm route & time]
+    D --> E[Get a QR ticket]
+    E --> F[Track & travel]
 ```
 
-## Run locally
+---
 
-### 1. Backend
+## 🏗️ Under the hood
+
+```mermaid
+flowchart TB
+    PWA[React PWA\nVite + TypeScript + Zustand]
+    API[Express REST API]
+    Voice[Voice parser + Gemini]
+    Socket[Socket.IO]
+    Store[In-memory demo store]
+    Conductor[Conductor dashboard]
+
+    PWA -->|REST| API
+    PWA <-->|Realtime| Socket
+    API --> Voice
+    API --> Store
+    Socket --> Conductor
+```
+
+| Area | Technology |
+|---|---|
+| Frontend | React 19, Vite, TypeScript, React Router, Zustand, PWA |
+| Backend | Express, Socket.IO, Zod, TypeScript |
+| Voice | Web Speech APIs plus optional Gemini parsing |
+| Mapping | Leaflet / MapLibre with text-only fallback |
+| Deployment | Vercel frontend, Render backend |
+
+---
+
+## 🚀 Quick start
+
+### Start the backend
 
 ```bash
 cd backend
@@ -49,9 +121,9 @@ cp .env.example .env
 npm run dev
 ```
 
-The backend listens on `http://localhost:4000`.
+The API runs at **http://localhost:4000**.
 
-### 2. Frontend
+### Start the frontend
 
 ```bash
 cd frontend
@@ -60,66 +132,86 @@ cp .env.example .env
 npm run dev
 ```
 
-Open `http://localhost:5173`.
+Open **http://localhost:5173**.
 
-## Environment variables
+---
 
-### Backend
+## 🔐 Environment
 
-| Variable | Purpose |
-|---|---|
-| `PORT` | Express server port |
-| `GEMINI_API_KEY` | Optional Gemini API key |
-| `GEMINI_MODEL` | Primary Gemini model |
-| `GEMINI_FALLBACK_MODEL` | Optional fallback model |
-| `CONDUCTOR_PIN` | Conductor dashboard PIN |
-| `FRONTEND_ORIGIN` | Allowed frontend origin for CORS |
+| Variable | Where | Purpose |
+|---|---|---|
+| `VITE_API_URL` | Frontend | Render or local backend URL |
+| `GEMINI_API_KEY` | Backend | Optional Gemini API key |
+| `GEMINI_MODEL` | Backend | Primary voice model |
+| `GEMINI_FALLBACK_MODEL` | Backend | Fallback voice model |
+| `CONDUCTOR_PIN` | Backend | Conductor dashboard PIN |
+| `FRONTEND_ORIGIN` | Backend | Allowed frontend CORS origin |
 
-### Frontend
+> Keep API keys and PINs in environment variables, never in source code.
 
-| Variable | Purpose |
-|---|---|
-| `VITE_API_URL` | Backend base URL, for example `https://your-backend.onrender.com` |
+---
 
-Keep real API keys and PINs outside Git.
+## 🎬 90-second demo
 
-## 90-second demo
+1. Open the app and choose a language and passenger needs.
+2. Search from **Howrah Station** to **Salt Lake Sector V**.
+3. Compare the exact, earlier, and later accessible buses.
+4. Confirm the route, time, and wheelchair-bay count.
+5. Open the QR ticket and conductor dashboard.
+6. Trigger a demo delay or full-bus scenario.
+7. Show the replacement bus or accessible alternative.
+8. Finish in high contrast or with the text-only tracking view.
 
-1. Open the landing page and select **Start Journey**.
-2. Choose wheelchair access and the preferred language.
-3. Search from **Howrah Station** to **Salt Lake Sector V**.
-4. Select an accessible bus and confirm the route and departure time.
-5. Open the QR ticket and show the booking status.
-6. Open the conductor screen on a second device and acknowledge the booking.
-7. Trigger a demo delay or full-bus scenario, then show the alternative or reassignment message.
-8. Demonstrate text-only map mode, theme change, and the large text controls.
+---
 
-## Accessibility and safety
+## ♿ Accessibility
 
-Hey Buss is designed around WCAG 2.2 and GIGW accessibility principles, but formal certification is not claimed. The demo should be tested with real screen readers and devices before operational use.
+Hey Buss aims to implement **WCAG 2.2 AA** and **GIGW 3.0** principles.
 
-Important limitations:
+This is a working prototype, not a certification or a production government service. Real TalkBack, VoiceOver, Firefox fallback, keyboard, 320px reflow, and 200% text testing are still required before operational claims.
 
-- Trip and timetable data is demo data, not a live government timetable.
-- SMS, conductor dispatch, and SOS actions are demo integrations unless real providers and authorized workflows are configured.
-- Voice recognition and speech synthesis depend on browser and device support.
-- Bookings and backend state are in memory and may reset when the server restarts.
-- Never rely on this demo for real emergency response.
+### Honest limitations
 
-## Validation
+- Trip data is demo data, not a live government timetable.
+- SOS and SMS actions are demonstrations unless real providers are integrated.
+- Backend bookings are in memory and may reset after restart.
+- Voice recognition and speech quality vary by browser and device.
+- Never rely on this prototype for real emergency response.
 
-Run these commands from the repository areas that own the code:
+---
+
+## 🧪 Development checks
 
 ```bash
+# Frontend
 cd frontend
 npm run lint
 npm run build
 
+# Backend
 cd ../backend
 npm test
 npm run build
 ```
 
-## License
+---
 
-No repository license is currently declared. Add one before reusing or distributing the project.
+## 📚 Project docs
+
+| Document | Purpose |
+|---|---|
+| [Frontend README](./frontend/README.md) | React PWA setup and interface |
+| [Backend README](./backend/README.md) | API, voice, and Socket.IO server |
+| [Architecture](./ARCHITECTURE.md) | System design and data flows |
+| [Deployment](./DEPLOY.md) | Vercel and Render setup |
+| [API contract](./contract.md) | Request and response shapes |
+
+---
+
+<div align="center">
+
+### Made with purpose, clarity, and a little Kolkata energy. 🚌💜
+
+**Hey Buss — a clearer journey is a kinder journey.**
+
+</div>
