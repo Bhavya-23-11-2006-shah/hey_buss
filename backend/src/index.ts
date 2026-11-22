@@ -9,20 +9,21 @@ import { Server } from 'socket.io'
 import { z } from 'zod'
 import { bookings, findAlternatives, isAccessible, stops, trips, minutes } from './store'
 import { Booking, Profile, Trip } from './types'
-import { handleIntent } from './voice'
+import { checkGeminiHealth, getGeminiHealth, handleIntent } from './voice'
 import { MockSmsAdapter } from './sms'
 
 const app = express()
 const server = http.createServer(app)
-const io = new Server(server, { cors: { origin: '*', methods: ['GET', 'POST'] } })
+const io = new Server(server, { cors: { origin: process.env.FRONTEND_ORIGIN || '*', methods: ['GET', 'POST'] } })
 
 app.use(helmet({ contentSecurityPolicy: false }))
-app.use(cors())
+app.set('trust proxy', 1)
+app.use(cors({ origin: process.env.FRONTEND_ORIGIN || '*' }))
 app.use(express.json({ limit: '32kb' }))
 
 const profileSchema = z.object({
   name: z.string().min(1).max(80),
-  language: z.enum(['en', 'hi']),
+  language: z.enum(['en', 'hi', 'bn']),
   needs: z.array(z.enum(['blind', 'deaf', 'wheelchair'])),
   howToHelp: z.array(z.string().max(120)).max(10),
 })
@@ -31,7 +32,7 @@ const eventBody = z.object({ type: z.enum(['AT_STOP', 'BUS_HERE', 'ASSISTING', '
 const sms = new MockSmsAdapter()
 const bookingCreatedAt = new Map<string, number>()
 
-app.get('/health', (_req, res) => res.json({ ok: true }))
+app.get('/health', (_req, res) => res.json({ ok: true, gemini: getGeminiHealth() }))
 app.get('/api/stops', (_req, res) => res.json(stops))
 
 app.get('/api/trips/search', (req, res) => {
@@ -221,6 +222,11 @@ app.post('/api/voice/intent', async (req, res) => {
   const voiceRequest = parsed.data
   const now = Date.now()
   const rateKey = req.ip || 'unknown'
+  for (const [key, timestamps] of voiceWindow) {
+    const active = timestamps.filter(timestamp => now - timestamp < 10_000)
+    if (active.length) voiceWindow.set(key, active)
+    else voiceWindow.delete(key)
+  }
   const hits = (voiceWindow.get(rateKey) || []).filter(t => now - t < 10000)
   if (hits.length >= 12) return res.status(429).json({ error: 'Please wait before trying again' })
   hits.push(now)
@@ -263,4 +269,5 @@ setInterval(() => {
 const port = Number(process.env.PORT || 4000)
 server.listen(port, '0.0.0.0', () => {
   console.log(`Hey Buss backend listening on port ${port}`)
+  void checkGeminiHealth().then(status => console.log(`[gemini] boot health: ${status}`))
 })
