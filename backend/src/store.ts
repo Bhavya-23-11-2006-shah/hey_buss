@@ -22,6 +22,55 @@ export const trips: Trip[] = [
 
 export const bookings = new Map<string, Booking>()
 
+const stopAliases: Record<string, string[]> = {
+  'Sealdah': ['sealdah', 'shealdah', 'sialdah'],
+  'Howrah Station': ['howrah', 'haora', 'howrah station'],
+  'Tollygunge': ['tollygunge', 'tollygunj'],
+  'Salt Lake Sector V': ['sector v', 'sector five', 'salt lake sector v', 'salt lake'],
+}
+
+function normaliseStopName(value: string): string {
+  return value
+    .toLocaleLowerCase('en-IN')
+    .normalize('NFKD')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
+}
+
+function editDistance(a: string, b: string): number {
+  const row = Array.from({ length: b.length + 1 }, (_, index) => index)
+  for (let i = 1; i <= a.length; i += 1) {
+    let previous = row[0]
+    row[0] = i
+    for (let j = 1; j <= b.length; j += 1) {
+      const current = row[j]
+      row[j] = a[i - 1] === b[j - 1]
+        ? previous
+        : Math.min(previous + 1, row[j - 1] + 1, current + 1)
+      previous = current
+    }
+  }
+  return row[b.length]
+}
+
+export function resolveStop(value: string | undefined): string | undefined {
+  if (!value) return undefined
+  const input = normaliseStopName(value)
+  const names = stops.map(stop => stop.name)
+  const candidates = names.flatMap(name => [
+    { name, alias: name },
+    ...(stopAliases[name] || []).map(alias => ({ name, alias })),
+  ])
+  const exact = candidates.find(candidate => normaliseStopName(candidate.alias) === input)
+  if (exact) return exact.name
+  const fuzzy = candidates
+    .map(candidate => ({ ...candidate, distance: editDistance(input, normaliseStopName(candidate.alias)) }))
+    .sort((a, b) => a.distance - b.distance)[0]
+  return fuzzy && fuzzy.distance <= Math.max(2, Math.floor(input.length * 0.3))
+    ? fuzzy.name
+    : value.trim()
+}
+
 export function minutes(time: string): number {
   const [h, m] = time.split(':').map(Number)
   return h * 60 + m

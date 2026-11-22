@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
-  Accessibility, ArrowRight, ArrowLeftRight, Bus, CalendarClock,
-  ChevronRight, Clock3, CircleAlert, MapPin, Mic, Navigation,
-  Search, ShieldAlert, Volume2, Wheelchair, X
+  Accessibility, ArrowRight, ArrowLeftRight, Bus,
+  ChevronRight, Clock3, MapPin, Mic, Navigation,
+  Search, ShieldAlert, X
 } from 'lucide-react'
 import { io } from 'socket.io-client'
 import './styles.css'
@@ -24,7 +24,7 @@ const defaultStops = [
 ]
 
 function App() {
-  const [profile, setProfile] = useState(defaultProfile)
+  const [profile] = useState(defaultProfile)
   const [stops, setStops] = useState(defaultStops)
   const [from, setFrom] = useState('Central Station')
   const [to, setTo] = useState('City Mall')
@@ -49,16 +49,16 @@ function App() {
     return () => socket.disconnect()
   }, [])
 
-  const search = async () => {
+  const search = useCallback(async () => {
     const params = new URLSearchParams({
       from, to, time, needs: profile.needs.join(',')
     })
     const res = await fetch(`${API_URL}/api/trips/search?${params}`)
     const data = await res.json()
     setTrips(data)
-  }
+  }, [from, to, time, profile.needs])
 
-  useEffect(() => { search() }, [])
+  useEffect(() => { void search() }, [search])
 
   const bookTrip = async (trip) => {
     if (!trip) return
@@ -125,7 +125,7 @@ function App() {
             <p className="subtitle">Where would you like to go today?</p>
           </div>
           <div className="profile-summary">
-            <div className="profile-icon"><Wheelchair size={21} /></div>
+            <div className="profile-icon"><Accessibility size={21} /></div>
             <div>
               <strong>Your accessibility</strong>
               <span>Wheelchair access</span>
@@ -216,7 +216,7 @@ function App() {
                   </div>
                   <div className="amenities">
                     {trip.ramp && <span><Accessibility size={15} /> Ramp available</span>}
-                    <span><Wheelchair size={15} /> {trip.baysFree} bays free</span>
+                    <span><Accessibility size={15} /> {trip.baysFree} bays free</span>
                   </div>
                   <button className="book-button" onClick={() => bookTrip(trip)}>
                     Select this bus <ChevronRight size={17} />

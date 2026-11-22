@@ -1,7 +1,7 @@
 export type Need = 'blind' | 'deaf' | 'wheelchair'
 export type Profile = {
   name: string
-  language: 'en' | 'hi'
+  language: 'en' | 'hi' | 'bn'
   needs: Need[]
   howToHelp: string[]
 }
