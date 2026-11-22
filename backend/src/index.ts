@@ -9,7 +9,7 @@ import { Server } from 'socket.io'
 import { z } from 'zod'
 import { bookings, findAlternatives, isAccessible, stops, trips, minutes } from './store'
 import { Booking, Profile, Trip } from './types'
-import { checkGeminiHealth, getGeminiHealth, handleIntent } from './voice'
+import { handleIntent } from './voice'
 import { MockSmsAdapter } from './sms'
 
 const app = express()
@@ -32,7 +32,7 @@ const eventBody = z.object({ type: z.enum(['AT_STOP', 'BUS_HERE', 'ASSISTING', '
 const sms = new MockSmsAdapter()
 const bookingCreatedAt = new Map<string, number>()
 
-app.get('/health', (_req, res) => res.json({ ok: true, gemini: getGeminiHealth() }))
+app.get('/health', (_req, res) => res.json({ ok: true }))
 app.get('/api/stops', (_req, res) => res.json(stops))
 
 app.get('/api/trips/search', (req, res) => {
@@ -269,5 +269,5 @@ setInterval(() => {
 const port = Number(process.env.PORT || 4000)
 server.listen(port, '0.0.0.0', () => {
   console.log(`Hey Buss backend listening on port ${port}`)
-  void checkGeminiHealth().then(status => console.log(`[gemini] boot health: ${status}`))
 })
+
