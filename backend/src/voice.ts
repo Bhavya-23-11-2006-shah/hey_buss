@@ -17,6 +17,7 @@ const intentSchema = z.object({
       exact: z.any().nullable(),
       earlier: z.any().nullable(),
       later: z.any().nullable(),
+      trips: z.array(z.any()).optional(),
       reason: z.string(),
     }).optional(),
     booking: z.any().optional(),
@@ -44,7 +45,6 @@ function cleanWake(text: string): string {
 }
 
 function extractSlots(text: string, previous: Slots = {}): Slots {
-  const lower = text.toLowerCase()
   const result = { ...previous }
   const time = text.match(/\b([01]?\d|2[0-3])(?::([0-5]\d))?\s*(am|pm)?\b/i)
   if (time) {
@@ -74,14 +74,6 @@ function extractSlots(text: string, previous: Slots = {}): Slots {
     else if (!result.from && canBeOrigin) result.from = name
   }
 
-  if (result.to && !result.from) {
-    const origins = [...new Set(trips.filter(trip => trip.to === result.to).map(trip => trip.from))]
-    if (origins.length === 1) result.from = origins[0]
-  }
-  if (result.from && !result.to) {
-    const destinations = [...new Set(trips.filter(trip => trip.from === result.from).map(trip => trip.to))]
-    if (destinations.length === 1) result.to = destinations[0]
-  }
   return result
 }
 
@@ -279,3 +271,4 @@ export async function handleIntent(text: string, sessionId: string, profile: Pro
   }
   return fallback(clean, session, profile, onBooking)
 }
+

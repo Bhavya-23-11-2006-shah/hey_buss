@@ -98,5 +98,6 @@ export function findAlternatives(time: string, needs: Profile['needs'], from?: s
   else if (exact) reason = `${time} is available.`
   if (earlier) reason += ` ${earlier.departs} has a free ramp bay.`
   else if (later) reason += ` ${later.departs} has a free ramp bay.`
-  return { exact, earlier, later, reason }
+  return { exact, earlier, later, trips: sorted, reason }
 }
+
