@@ -817,7 +817,7 @@ npm run preview
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VITE_API_URL` | _(empty)_ | Full URL of backend (e.g. `http://localhost:4000`). If empty, app runs in full offline mock mode |
+| `VITE_API_URL` | _(empty)_ | Full URL of the deployed backend. If empty, app runs in demo mode |
 
 ---
 

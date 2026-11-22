@@ -8,14 +8,14 @@
 
 **A voice-first, accessibility-led transit experience for Kolkata**
 
-[![Live Project](https://img.shields.io/badge/Live-Vercel-1238C9?style=for-the-badge&logo=vercel)](https://vercel.com/bhavya-23-11-2006-shahs-projects/hey-buss)
+[![Live Project](https://img.shields.io/badge/Live-Vercel-1238C9?style=for-the-badge&logo=vercel)](https://hey-buss.vercel.app/)
 [![Frontend](https://img.shields.io/badge/Frontend-React%2019-61DAFB?style=for-the-badge&logo=react&logoColor=0B1330)](./frontend)
 [![Backend](https://img.shields.io/badge/Backend-Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](./backend)
 [![Languages](https://img.shields.io/badge/ENGLISH--हिंदी--বাংলা-007A4D?style=for-the-badge)](#accessibility)
 
 <br />
 
-[Explore the app](https://vercel.com/bhavya-23-11-2006-shahs-projects/hey-buss)
+[Explore the app](https://hey-buss.vercel.app/)
 ·
 [Architecture](./ARCHITECTURE.md)
 ·
@@ -107,32 +107,6 @@ flowchart TB
 | Voice | Web Speech APIs plus optional Gemini parsing |
 | Mapping | Leaflet / MapLibre with text-only fallback |
 | Deployment | Vercel frontend, Render backend |
-
----
-
-## 🚀 Quick start
-
-### Start the backend
-
-```bash
-cd backend
-npm install
-cp .env.example .env
-npm run dev
-```
-
-The API runs at **http://localhost:4000**.
-
-### Start the frontend
-
-```bash
-cd frontend
-npm install
-cp .env.example .env
-npm run dev
-```
-
-Open **http://localhost:5173**.
 
 ---
 

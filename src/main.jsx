@@ -8,7 +8,7 @@ import {
 import { io } from 'socket.io-client'
 import './styles.css'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 const defaultProfile = {
   name: 'Aarav',

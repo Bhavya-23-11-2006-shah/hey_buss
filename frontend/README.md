@@ -49,7 +49,7 @@
 ## ⏱️ 10-Second Test Per Page Checklist
 
 ### 1. Landing Page (`/`) — 10s
-1. Open [http://localhost:5173/](http://localhost:5173/).
+1. Open [the live Hey Buss app](https://hey-buss.vercel.app/).
 2. Verify headline: *"A bus that is ready for you."* with Kolkata route indicator.
 3. Observe the gliding bus animation moving along the route line.
 4. Verify the 4-step *How It Works* cards and 4 disability mode cards.

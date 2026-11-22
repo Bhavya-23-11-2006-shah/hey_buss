@@ -13,7 +13,6 @@ cp .env.example .env
 npm run dev
 ```
 
-The backend listens on `http://localhost:4000` by default.
 
 ## Pages
 
