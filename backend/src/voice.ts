@@ -31,8 +31,12 @@ type VoiceSession = { slots: Slots; introduced: boolean; pendingTrip?: Trip; boo
 const sessions = new Map<string, VoiceSession>()
 const stopAliases: Array<{ name: string; aliases: string[] }> = [
   { name: 'Esplanade', aliases: ['Esplanade', 'Esplanade Gate 2'] },
+  { name: 'Sealdah', aliases: ['Sealdah', 'Shealdah', 'Sialdah'] },
+  { name: 'Park Circus', aliases: ['Park Circus', 'Park Circus stop'] },
   { name: 'Salt Lake Sector V', aliases: ['Salt Lake Sector V', 'Salt Lake', 'Sector V', 'Sector Five'] },
   { name: 'Howrah Station', aliases: ['Howrah Station', 'Howrah'] },
+  { name: 'College Street', aliases: ['College Street', 'College St'] },
+  { name: 'Tollygunge', aliases: ['Tollygunge', 'Tollygunj'] },
   { name: 'Airport Gate 3', aliases: ['Airport Gate 3', 'Airport'] },
 ]
 
