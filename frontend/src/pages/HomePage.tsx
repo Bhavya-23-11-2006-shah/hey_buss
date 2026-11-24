@@ -17,25 +17,6 @@ import {
   createSpeechRecognizer,
 } from '../utils/speech';
 
-const STOP_NAME_GROUPS = [
-  ['Esplanade'],
-  ['Sealdah'],
-  ['Park Circus'],
-  ['Howrah Station', 'Howrah'],
-  ['Salt Lake Sector V', 'Salt Lake', 'Sector V', 'Sector Five'],
-  ['College Street'],
-  ['Tollygunge', 'Tollygunj'],
-  ['Airport Gate 3', 'Airport'],
-];
-
-function transcriptIncludesStartAndDestination(transcript: string): boolean {
-  const normalized = transcript.toLocaleLowerCase('en-IN');
-  const mentioned = STOP_NAME_GROUPS.filter((names) =>
-    names.some((name) => normalized.includes(name.toLocaleLowerCase('en-IN')))
-  );
-  return mentioned.length >= 2;
-}
-
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const profile = useStore((state) => state.profile);
