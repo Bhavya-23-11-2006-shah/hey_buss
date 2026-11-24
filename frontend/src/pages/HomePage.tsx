@@ -17,6 +17,25 @@ import {
   createSpeechRecognizer,
 } from '../utils/speech';
 
+const STOP_NAME_GROUPS = [
+  ['Esplanade'],
+  ['Sealdah'],
+  ['Park Circus'],
+  ['Howrah Station', 'Howrah'],
+  ['Salt Lake Sector V', 'Salt Lake', 'Sector V', 'Sector Five'],
+  ['College Street'],
+  ['Tollygunge', 'Tollygunj'],
+  ['Airport Gate 3', 'Airport'],
+];
+
+function transcriptIncludesStartAndDestination(transcript: string): boolean {
+  const normalized = transcript.toLocaleLowerCase('en-IN');
+  const mentioned = STOP_NAME_GROUPS.filter((names) =>
+    names.some((name) => normalized.includes(name.toLocaleLowerCase('en-IN')))
+  );
+  return mentioned.length >= 2;
+}
+
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const profile = useStore((state) => state.profile);
@@ -31,6 +50,8 @@ export const HomePage: React.FC = () => {
   const [listeningTranscript, setListeningTranscript] = useState('');
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const recognitionRef = useRef<ReturnType<typeof createSpeechRecognizer>>(null);
+  const voiceSessionActiveRef = useRef(false);
+  const voiceProcessingRef = useRef(false);
 
   // Quick destinations (real Kolkata copy)
   const quickDestinations = [
@@ -55,32 +76,50 @@ export const HomePage: React.FC = () => {
     }
 
     if (isListening) {
+      voiceSessionActiveRef.current = false;
       recognitionRef.current?.stop();
       recognitionRef.current = null;
       setIsListening(false);
+      window.speechSynthesis?.cancel();
       return;
     }
 
     setVoiceError(null);
+    voiceSessionActiveRef.current = true;
     const rec = createSpeechRecognizer(
       profile.language,
       async (transcript) => {
+        if (voiceProcessingRef.current) return;
+        voiceProcessingRef.current = true;
         setVoiceError(null);
         setListeningTranscript(transcript);
         setDestinationBoardText(`LISTENING: "${transcript}"`);
 
         try {
           const res = await apiClient.sendVoiceIntent(transcript, sessionId, profile);
+          const hasTripResults =
+            (res.uiAction.type === 'SHOW_TRIPS' || res.uiAction.type === 'ASK_CONFIRM') && Boolean(res.uiAction.trips);
+
           setDestinationBoardText(res.spokenReply);
           speakText(res.spokenReply, profile.language);
 
-          if ((res.uiAction.type === 'SHOW_TRIPS' || res.uiAction.type === 'ASK_CONFIRM') && res.uiAction.trips) {
+          if (res.uiAction.type === 'SHOW_TRIPS' && hasTripResults) {
+            voiceSessionActiveRef.current = false;
+            recognitionRef.current?.stop();
             navigate('/app/book', { state: { voiceResponse: res } });
           } else if (res.uiAction.type === 'BOOKED' && res.uiAction.booking) {
+            voiceSessionActiveRef.current = false;
+            recognitionRef.current?.stop();
             setActiveBooking(res.uiAction.booking);
             setBookingTimestamp(Date.now());
             navigate('/app/tickets');
+          } else if (res.uiAction.type === 'SHOW_TRACKING') {
+            voiceSessionActiveRef.current = false;
+            recognitionRef.current?.stop();
+            if (activeBooking) navigate('/app/tickets');
           } else if (res.uiAction.type === 'SOS') {
+            voiceSessionActiveRef.current = false;
+            recognitionRef.current?.stop();
             try {
               const result = await apiClient.sendSos(activeBooking?.id, null, null, profile);
               const message = result.mocked
@@ -97,20 +136,32 @@ export const HomePage: React.FC = () => {
         } catch {
           setDestinationBoardText('Could not process voice request. Please try again.');
         } finally {
-          setIsListening(false);
+          voiceProcessingRef.current = false;
         }
       },
       (error) => {
-        recognitionRef.current = null;
-        setIsListening(false);
-        setVoiceError(error === 'not-allowed'
-          ? 'Microphone access is blocked. Allow microphone access in your browser, then try again.'
-          : `Voice recognition stopped (${error}). Try again or use “Book a Bus”.`);
+        if (error !== 'no-speech' && error !== 'aborted') {
+          voiceSessionActiveRef.current = false;
+          recognitionRef.current = null;
+          setIsListening(false);
+        }
+        if (error !== 'no-speech' && error !== 'aborted') {
+          setVoiceError(error === 'not-allowed'
+            ? 'Microphone access is blocked. Allow microphone access in your browser, then try again.'
+            : `Voice recognition stopped (${error}). Try again or use “Book a Bus”.`);
+        }
       },
       () => {
-        recognitionRef.current = null;
-        setIsListening(false);
-      }
+        if (voiceSessionActiveRef.current && !voiceProcessingRef.current) {
+          window.setTimeout(() => {
+            try { rec?.start(); setIsListening(true); } catch { /* already listening */ }
+          }, 300);
+        } else if (!voiceSessionActiveRef.current) {
+          recognitionRef.current = null;
+          setIsListening(false);
+        }
+      },
+      true
     );
 
     if (rec) {
@@ -119,7 +170,9 @@ export const HomePage: React.FC = () => {
         recognitionRef.current = rec;
         rec.start();
         setIsListening(true);
-        const msg = profile.language === 'hi' ? 'बोलिए, कहाँ जाना चाहते हैं?' : 'Listening. Where would you like to go?';
+        const msg = profile.language === 'hi'
+          ? 'हे बस कहकर बोलें। मैं आपकी यात्रा के दौरान सुनता रहूँगा।'
+          : 'Say Hey Buss, then tell me what you need. I will keep listening until your request is complete.';
         setDestinationBoardText(msg);
         speakText(msg, profile.language);
       } catch {
@@ -310,3 +363,4 @@ export const HomePage: React.FC = () => {
     </div>
   );
 };
+
