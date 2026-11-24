@@ -41,7 +41,8 @@ export function createSpeechRecognizer(
   language: 'en' | 'hi',
   onResult: (transcript: string) => void,
   onError: (error: string) => void,
-  onEnd?: () => void
+  onEnd?: () => void,
+  continuous = false
 ) {
   const SpeechRecognition =
     (window as unknown as { SpeechRecognition?: any }).SpeechRecognition ||
@@ -55,16 +56,17 @@ export function createSpeechRecognizer(
   try {
     const recognition = new SpeechRecognition();
     recognition.lang = language === 'hi' ? 'hi-IN' : 'en-US';
-    recognition.continuous = false;
+    recognition.continuous = continuous;
     recognition.interimResults = false;
     recognition.maxAlternatives = 3;
 
     recognition.onresult = (event: any) => {
       let combined = '';
-      for (let i = 0; i < event.results.length; i++) {
+      for (let i = event.resultIndex || 0; i < event.results.length; i++) {
+        if (!event.results[i].isFinal) continue;
         combined += event.results[i][0].transcript + ' ';
       }
-      onResult(combined.trim());
+      if (combined.trim()) onResult(combined.trim());
     };
 
     recognition.onerror = (event: any) => {
@@ -82,3 +84,4 @@ export function createSpeechRecognizer(
     return null;
   }
 }
+
