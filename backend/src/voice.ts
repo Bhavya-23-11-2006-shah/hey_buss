@@ -61,17 +61,14 @@ function extractSlots(text: string, previous: Slots = {}): Slots {
   const mentioned = stopsMentioned(text)
 
   if (mentioned.length >= 2) {
-    const route = trips.find(trip => trip.from === mentioned[0] && trip.to === mentioned[1])
-    if (route) {
-      result.from = route.from
-      result.to = route.to
-    }
+    result.from = mentioned[0]
+    result.to = mentioned[1]
   } else if (mentioned.length === 1) {
     const name = mentioned[0]
     const canBeOrigin = trips.some(trip => trip.from === name && (!result.to || trip.to === result.to))
     const canBeDestination = trips.some(trip => trip.to === name && (!result.from || trip.from === result.from))
-    if (!result.from && result.to && canBeOrigin) result.from = name
-    else if (!result.to && result.from && canBeDestination) result.to = name
+    if (!result.from && result.to) result.from = name
+    else if (result.from && !result.to) result.to = name
     else if (/\bfrom\b|\bse\b/i.test(text) && canBeOrigin) result.from = name
     else if (/\bto\b|\btak\b/i.test(text) && canBeDestination) result.to = name
     else if (!result.to && canBeDestination) result.to = name
