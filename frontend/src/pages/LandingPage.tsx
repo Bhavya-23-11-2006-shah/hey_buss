@@ -63,7 +63,7 @@ export const LandingPage: React.FC = () => {
         </h1>
 
         <p className="text-lg sm:text-xl text-muted font-normal max-w-2xl mx-auto">
-          An accessible bus booking demo. Search sample Kolkata routes, save an assistance profile, and follow the backend’s simulated bus updates.
+          Tap Start Your Journey, then Talk once to enable the microphone. Say “Hey Buss” and keep speaking naturally; it listens through follow-up questions until your booking or bus-status request is complete.
         </p>
 
         {/* Start and Install CTA Buttons */}
@@ -156,7 +156,7 @@ export const LandingPage: React.FC = () => {
             </div>
             <h3 className="text-lg font-bold text-ink">Say where you want to go</h3>
             <p className="text-sm text-muted">
-              Tap the large Talk button or speak hands-free. No typing or complicated route maps required.
+              Tap Talk once to enable the microphone, then say “Hey Buss.” It stays in hands-free mode through the conversation. Tap Listening to stop.
             </p>
           </div>
 
@@ -321,7 +321,7 @@ export const LandingPage: React.FC = () => {
               <span className="text-xs font-bold uppercase text-muted">Conductor Dashboard View</span>
               <span className="text-xs font-bold text-success uppercase">Alert Received</span>
             </div>
-            <div className="text-lg font-bold text-ink">Passenger: Ramanpreet Kaur</div>
+            <div className="text-lg font-bold text-ink">Passenger: Unknown Passenger</div>
             <div className="text-xs font-mono text-muted">Boarding at: Howrah Station Bay 1</div>
             <div className="p-3 bg-amber-50 text-amber-900 border border-amber-200 rounded-btn text-xs font-bold">
               ACTION: Prepare wheelchair ramp • 1 wheelchair bay reserved onboard.
@@ -342,3 +342,4 @@ export const LandingPage: React.FC = () => {
     </div>
   );
 };
+
