@@ -72,9 +72,19 @@ export const HomePage: React.FC = () => {
       async (transcript) => {
         if (voiceProcessingRef.current) return;
         voiceProcessingRef.current = true;
+        recognitionRef.current?.stop();
         setVoiceError(null);
         setListeningTranscript(transcript);
         setDestinationBoardText(`LISTENING: "${transcript}"`);
+        const resumeListening = () => {
+          voiceProcessingRef.current = false;
+          if (!voiceSessionActiveRef.current) return;
+          window.setTimeout(() => {
+            const current = recognitionRef.current;
+            if (!current || !voiceSessionActiveRef.current) return;
+            try { current.start(); setIsListening(true); } catch { /* already listening */ }
+          }, 300);
+        };
 
         try {
           const res = await apiClient.sendVoiceIntent(transcript, sessionId, profile);
@@ -82,25 +92,28 @@ export const HomePage: React.FC = () => {
             (res.uiAction.type === 'SHOW_TRIPS' || res.uiAction.type === 'ASK_CONFIRM') && Boolean(res.uiAction.trips);
 
           setDestinationBoardText(res.spokenReply);
-          speakText(res.spokenReply, profile.language);
 
           if (res.uiAction.type === 'SHOW_TRIPS' && hasTripResults) {
             voiceSessionActiveRef.current = false;
             recognitionRef.current?.stop();
+            speakText(res.spokenReply, profile.language);
             navigate('/app/book', { state: { voiceResponse: res } });
           } else if (res.uiAction.type === 'BOOKED' && res.uiAction.booking) {
             voiceSessionActiveRef.current = false;
             recognitionRef.current?.stop();
+            speakText(res.spokenReply, profile.language);
             setActiveBooking(res.uiAction.booking);
             setBookingTimestamp(Date.now());
             navigate('/app/tickets');
           } else if (res.uiAction.type === 'SHOW_TRACKING') {
             voiceSessionActiveRef.current = false;
             recognitionRef.current?.stop();
+            speakText(res.spokenReply, profile.language);
             if (activeBooking) navigate('/app/tickets');
           } else if (res.uiAction.type === 'SOS') {
             voiceSessionActiveRef.current = false;
             recognitionRef.current?.stop();
+            speakText(res.spokenReply, profile.language);
             try {
               const result = await apiClient.sendSos(activeBooking?.id, null, null, profile);
               const message = result.mocked
@@ -113,11 +126,13 @@ export const HomePage: React.FC = () => {
               setDestinationBoardText(message);
               speakText(message, profile.language);
             }
+          } else {
+            speakText(res.spokenReply, profile.language, resumeListening);
           }
         } catch {
-          setDestinationBoardText('Could not process voice request. Please try again.');
-        } finally {
-          voiceProcessingRef.current = false;
+          const message = 'Could not process voice request. Please try again.';
+          setDestinationBoardText(message);
+          speakText(message, profile.language, resumeListening);
         }
       },
       (error) => {
@@ -201,10 +216,10 @@ export const HomePage: React.FC = () => {
             Voice Assistant
           </span>
           <h2 className="text-xl sm:text-2xl font-black text-ink">
-            Tap and say your destination
+            Say “Hey Buss” to book or check your bus
           </h2>
           <p className="text-sm text-muted">
-            Say a destination in English or Hindi. Available trips depend on the selected route and time.
+            Tap Talk once to allow the microphone. Then speak naturally; Hey Buss keeps listening through follow-up questions and stops when your request is complete. Tap Listening to stop sooner.
           </p>
         </div>
 
@@ -217,13 +232,17 @@ export const HomePage: React.FC = () => {
               : 'bg-marigold text-ink hover:brightness-105'
           }`}
           style={{ backgroundColor: isListening ? '#E5213B' : '#FFB800' }}
-          aria-label={isListening ? 'Stop listening' : 'Start voice booking. Tap and say where you want to go'}
+          aria-label={isListening ? 'Stop hands-free voice session' : 'Start hands-free voice session'}
         >
           <MicIcon size={36} />
           <span className="text-sm font-black uppercase tracking-wider">
             {isListening ? 'Listening' : 'Talk'}
           </span>
         </button>
+
+        <p role="status" className="text-sm font-semibold text-cobalt">
+          {isListening ? 'Hands-free session active — say “Hey Buss” and continue speaking.' : 'One tap starts the session; no need to tap again between answers.'}
+        </p>
 
         {listeningTranscript && (
           <p className="text-sm font-mono text-ink bg-white p-2 rounded border border-neutral-300 max-w-sm mx-auto">
